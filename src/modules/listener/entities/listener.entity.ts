@@ -1,61 +1,70 @@
 // src/listeners/entities/listener.entity.ts
 
 import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    UpdateDateColumn,
-    Index, ManyToOne,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+  ManyToOne,
 } from 'typeorm';
-import {ListenerStatus, Protocol} from "../enums/listener.enum";
-import {UserEntity} from "../../user/entities/user.entity";
+import { ListenerStatus, Protocol } from '../enums/listener.enum';
+import { UserEntity } from '../../user/entities/user.entity';
 
-@Entity()
+type ListenerOptions = {
+  ssl?: {
+    keyPath: string;
+    certPath: string;
+    caPath?: string;
+    passphrase?: string;
+    rejectUnauthorized?: boolean;
+  };
+  authenticationRequired?: boolean;
+  maxConnections?: number;
+  whitelistIps?: string[];
+};
+
+@Entity({ name: 'listeners' })
 export class ListenerEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column({ unique: true })
-    @Index()
-    name: string;
+  @Column({ unique: true })
+  @Index()
+  name: string;
 
-    @Column({ type: 'enum', enum: Protocol, default: Protocol.HTTP })
-    protocol: Protocol;
+  @Column({ type: 'enum', enum: Protocol, default: Protocol.HTTP })
+  protocol: Protocol;
 
-    @Column()
-    @Index()
-    port: number;
+  @Column()
+  @Index()
+  port: number;
 
-    @Column({ type: 'enum', enum: ListenerStatus, default: ListenerStatus.INACTIVE })
-    status: ListenerStatus;
+  @Column({
+    type: 'enum',
+    enum: ListenerStatus,
+    default: ListenerStatus.INACTIVE,
+  })
+  status: ListenerStatus;
 
-    @Column({ default: true })
-    @Index()
-    isActive: boolean;
+  @Column({ default: true })
+  @Index()
+  isActive: boolean;
 
-    @Column({ type: 'json', nullable: true })
-    options: {
-        ssl?: boolean;
-        authenticationRequired?: boolean;
-        maxConnections?: number;
-        whitelistIps?: string[];
-        // Add other protocol-specific options
-    };
+  @Column({ type: 'json', nullable: true })
+  options: ListenerOptions;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @CreateDateColumn()
+  createdAt: Date;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+  @UpdateDateColumn()
+  updatedAt: Date;
 
-    // Virtual column for active connections (not stored in DB)
-    connectionCount?: number;
+  // Virtual column for active connections (not stored in DB)
+  connectionCount?: number;
 
-
-    // Owner basically. Each listener belongs to the user who created it
-    @ManyToOne(() => UserEntity,
-        (user) => user.listener
-    )
-    user: UserEntity;
+  // Owner basically. Each listener belongs to the user who created it
+  @ManyToOne(() => UserEntity, (user) => user.listener)
+  user: UserEntity;
 }

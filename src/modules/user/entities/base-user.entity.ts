@@ -1,9 +1,6 @@
-import {
-    Column,
-    PrimaryGeneratedColumn,
-} from 'typeorm';
+import { PrimaryGeneratedColumn } from 'typeorm';
 
 export class BaseUser {
-    @PrimaryGeneratedColumn()
-    id: number
+  @PrimaryGeneratedColumn()
+  id: number;
 }

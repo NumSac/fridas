@@ -1,21 +1,20 @@
-import {ApiProperty} from "@nestjs/swagger";
-import {IsBoolean, IsEnum, IsJSON, IsNotEmpty, IsPort} from "class-validator";
-import { Protocol } from "../enums/listener.enum";
-
+import { ApiProperty } from '@nestjs/swagger';
+import { IsBoolean, IsEnum, IsJSON, IsNotEmpty, IsPort } from 'class-validator';
+import { Protocol } from '../enums/listener.enum';
 
 export class CreateListenerDto {
-    @IsNotEmpty()
-    name: string;
+  @IsNotEmpty()
+  name: string;
 
-    @IsEnum(Protocol)
-    protocol: Protocol;
+  @IsEnum(Protocol)
+  protocol: Protocol;
 
-    @IsPort()
-    port: number;
+  @IsPort()
+  port: number;
 
-    @IsBoolean()
-    isActive: boolean;
+  @IsBoolean()
+  isActive: boolean;
 
-    @IsJSON()
-    options: string;
+  @IsJSON()
+  options: string;
 }

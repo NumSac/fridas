@@ -1,17 +1,18 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import appConfig from 'src/config/app.config';
-import databaseConfig from 'src/config/database.config';
 import environmentValidation from '../../config/environment.validation';
-import {UserModule} from "../user/user.module";
-import {AuthModule} from "../auth/auth.module";
-import jwtConfig from "../../config/jwt.config";
-import {JwtModule} from "@nestjs/jwt";
-import {APP_GUARD, APP_INTERCEPTOR} from "@nestjs/core";
-import {AuthenticationGuard} from "../auth/guards/authentication/authentication.guard";
-import {AccessTokenGuard} from "../auth/guards/access-token/access-token.guard";
-import {DataResponseInterceptor} from "../../common/interceptors/data-response/data-response.interceptor";
+import { UserModule } from '../user/user.module';
+import { AuthModule } from '../auth/auth.module';
+import jwtConfig from '../../config/jwt.config';
+import { JwtModule } from '@nestjs/jwt';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { AuthenticationGuard } from '../auth/guards/authentication/authentication.guard';
+import { AccessTokenGuard } from '../auth/guards/access-token/access-token.guard';
+import { DataResponseInterceptor } from '../../common/interceptors/data-response/data-response.interceptor';
+import appConfig from '../../config/app.config';
+import databaseConfig from '../../config/database.config';
+import { ListenerModule } from '../listener/listener.module';
 
 // Get the current NODE_ENV
 const ENV = process.env.NODE_ENV;
@@ -20,6 +21,7 @@ const ENV = process.env.NODE_ENV;
   imports: [
     UserModule,
     AuthModule,
+    ListenerModule,
     ConfigModule.forRoot({
       isGlobal: true,
       //envFilePath: ['.env.development', '.env'],
@@ -34,14 +36,13 @@ const ENV = process.env.NODE_ENV;
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        //entities: [User],
         synchronize: configService.get('database.synchronize'),
         port: configService.get('database.port'),
         username: configService.get('database.user'),
         password: configService.get('database.password'),
         host: configService.get('database.host'),
         autoLoadEntities: configService.get('database.autoLoadEntities'),
-        database: configService.get('database.name'),
+        database: configService.get('database.name')
       }),
     }),
   ],
@@ -55,6 +56,6 @@ const ENV = process.env.NODE_ENV;
       useClass: DataResponseInterceptor,
     },
     AccessTokenGuard,
-  ]
+  ],
 })
 export class AppModule {}
