@@ -25,7 +25,7 @@ type ListenerOptions = {
   whitelistIps?: string[];
 };
 
-@Entity({ name: 'listeners' })
+@Entity({ name: "listener" })
 export class ListenerEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -65,6 +65,6 @@ export class ListenerEntity {
   connectionCount?: number;
 
   // Owner basically. Each listener belongs to the user who created it
-  @ManyToOne(() => UserEntity, (user) => user.listener)
+  @ManyToOne(() => UserEntity, (user) => user.listeners)
   user: UserEntity;
 }

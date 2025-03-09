@@ -38,6 +38,12 @@ importers:
       class-validator:
         specifier: ^0.14.1
         version: 0.14.1
+      ejs:
+        specifier: ^3.1.10
+        version: 3.1.10
+      handlebars-layouts:
+        specifier: ^3.1.4
+        version: 3.1.4
       joi:
         specifier: ^17.13.3
         version: 17.13.3
@@ -2287,6 +2293,10 @@ packages:
 
   graphemer@1.4.0:
     resolution: {integrity: sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==}
+
+  handlebars-layouts@3.1.4:
+    resolution: {integrity: sha512-2llBmvnj8ueOfxNHdRzJOcgalzZjYVd9+WAl93kPYmlX4WGx7FTHTzNxhK+i9YKY2OSjzfehgpLiIwP/OJr6tw==}
+    engines: {node: '>= 0.10'}
 
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
@@ -6505,6 +6515,8 @@ snapshots:
   graceful-fs@4.2.11: {}
 
   graphemer@1.4.0: {}
+
+  handlebars-layouts@3.1.4: {}
 
   has-flag@4.0.0: {}
 

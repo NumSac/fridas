@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <%- include('../partials/head', {
+  styles: `
+  .auth-wrapper { min-height: 100vh; display: flex; align-items: center; }
+  .auth-card { width: 100%; max-width: 400px; margin: 0 auto; padding: 2rem; }
+  `
+  }) %>
+</head>
+<body class="auth-wrapper">
+<div class="auth-card">
+  <form action="/auth/login" method="POST">
+
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      <input type="email" name="email" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Password</label>
+      <input type="password" name="password" class="form-control" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Sign In</button>
+  </form>
+</div>
+</body>
+</html>

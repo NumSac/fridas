@@ -2,7 +2,12 @@ import { Column, Entity, OneToMany } from 'typeorm';
 import { BaseUser } from './base-user.entity';
 import { ListenerEntity } from '../../listener/entities/listener.entity';
 
-@Entity({ name: 'users' })
+export enum Role {
+  ADMIN = 'ADMIN',
+  OPERATOR = 'OPERATOR',
+}
+
+@Entity('user') // Set table name to 'user'
 export class UserEntity extends BaseUser {
   @Column({
     type: 'varchar',
@@ -19,6 +24,7 @@ export class UserEntity extends BaseUser {
     unique: false,
   })
   username: string;
+
   @Column({
     type: 'varchar',
     length: 96,
@@ -26,6 +32,14 @@ export class UserEntity extends BaseUser {
   })
   password: string;
 
+  @Column({
+    type: 'enum',
+    enum: Role,
+    array: false,
+    default: [Role.OPERATOR]
+  })
+  role: Role;
+
   @OneToMany(() => ListenerEntity, (listener) => listener.user)
-  listener?: ListenerEntity[];
+  listeners?: ListenerEntity[]; // Renamed to plural for clarity
 }

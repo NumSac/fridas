@@ -13,6 +13,7 @@ import { DataResponseInterceptor } from '../../common/interceptors/data-response
 import appConfig from '../../config/app.config';
 import databaseConfig from '../../config/database.config';
 import { ListenerModule } from '../listener/listener.module';
+import { AppController } from './app.controller';
 
 // Get the current NODE_ENV
 const ENV = process.env.NODE_ENV;
@@ -47,15 +48,16 @@ const ENV = process.env.NODE_ENV;
     }),
   ],
   providers: [
-    {
-      provide: APP_GUARD,
-      useClass: AuthenticationGuard,
-    },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: AuthenticationGuard,
+    // },
     {
       provide: APP_INTERCEPTOR,
       useClass: DataResponseInterceptor,
     },
     AccessTokenGuard,
   ],
+  controllers: [AppController]
 })
 export class AppModule {}
