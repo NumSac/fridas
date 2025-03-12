@@ -1,6 +1,6 @@
 import { Column, Entity, OneToMany } from 'typeorm';
 import { BaseUser } from './base-user.entity';
-import { ListenerEntity } from '../../listener/entities/listener.entity';
+import { ListenerEntity } from '../../listeners/entities/listener.entity';
 
 export enum Role {
   ADMIN = 'ADMIN',

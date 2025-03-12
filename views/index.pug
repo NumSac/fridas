@@ -1,0 +1,18 @@
+extends layouts/main.pug
+
+block append messages
+    if error
+        .toast(role='alert' aria-live='assertive' aria-atomic='true' data-bs-delay='5000' class='text-bg-danger')
+            .toast-header
+                strong.me-auto Error
+                button.btn-close(type='button' data-bs-dismiss='toast' aria-label='Close')
+            .toast-body= error
+
+block content
+    .container.mt-4
+        .row
+            .col-md-3.mb-4
+                .card.bg-primary.text-white.status-card
+                    .card-body
+                        h5.card-title Active Listeners
+                        p.display-4 3

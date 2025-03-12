@@ -33,6 +33,9 @@ export class LoginProvider {
     let user = await this.userService.findOneByEmail(loginDto.email);
     // Throw exception if user is not found
     // Above | Taken care by the findInByEmail method
+    if (!user) {
+      throw new UnauthorizedException("User does not exist");
+    }
 
     let isEqual: boolean = false;
 

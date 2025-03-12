@@ -1,0 +1,49 @@
+nav.navbar.navbar-expand-lg.navbar-dark.bg-primary.mb-4
+    .container-fluid
+        // Brand and mobile toggle
+        a.navbar-brand(href="/") Fridas C2
+        button.navbar-toggler(
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#mainNavbar"
+        )
+            span.navbar-toggler-icon
+
+        // Collapsible content
+        #mainNavbar.collapse.navbar-collapse
+            // Left side navigation
+            ul.navbar-nav.me-auto.mb-2.mb-lg-0
+                li.nav-item
+                    a.nav-link(href="/dashboard") Dashboard
+                li.nav-item
+                    a.nav-link(href="/listeners") Listeners
+                li.nav-item
+                    a.nav-link(href="/agents") Agents
+
+            // Right side profile dropdown
+            ul.navbar-nav.ms-auto.mb-2.mb-lg-0
+                li.nav-item.dropdown
+                    a#profileDropdown.nav-link.dropdown-toggle(
+                        href="#"
+                        role="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                    )
+                        i.bi.bi-person-circle.me-1
+                        | John Doe
+                    ul.dropdown-menu.dropdown-menu-end(aria-labelledby="profileDropdown")
+                        li
+                            a.dropdown-item(href="/profile")
+                                i.bi.bi-person.me-2
+                                | Profile
+                        li
+                            a.dropdown-item(href="/settings")
+                                i.bi.bi-gear.me-2
+                                | Settings
+                        li
+                            hr.dropdown-divider
+                        li
+                            form(action="/auth/logout" method="POST")
+                                button.dropdown-item.text-danger(type="submit")
+                                    i.bi.bi-box-arrow-right.me-2
+                                    | Logout

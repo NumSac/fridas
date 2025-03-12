@@ -14,25 +14,22 @@ export class AuthController {
   ) {}
 
   @Get('login')
-  @Auth(AuthType.None)
   loginPage(@Query() error: string, @Res() res: Response) {
     return res.render('auth/login', { layout: 'layouts/auth.hbs', title: 'Login', error: error || null });
   }
 
   @Post('web-login')
-  @Auth(AuthType.None)
-  async webLogin(
-    @Body() loginDto: LoginDto,
-    @Res() res: Response
-  ) {
+  async webLogin(@Body() loginDto: LoginDto, @Res() res: Response) {
     try {
-      const token = await this.authService.webLogin(loginDto);
+      const { accessToken } = await this.authService.webLogin(loginDto);
 
-      res.cookie('jwt', token, {
+      res.cookie('jwt', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 3600000 // 1 hour
+        sameSite: 'lax', // Changed from 'strict'
+        maxAge: 3600000, // 1 hour in milliseconds
+        path: '/',
+        domain: process.env.COOKIE_DOMAIN || 'localhost'
       });
 
       return res.redirect('/');

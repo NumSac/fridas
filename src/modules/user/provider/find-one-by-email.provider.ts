@@ -14,7 +14,7 @@ export class FindOneByEmailProvider {
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
-  public async findOneByEmail(email: string): Promise<UserEntity> {
+  public async findOneByEmail(email: string): Promise<UserEntity | null> {
     let user: UserEntity | null = null;
 
     try {
@@ -24,9 +24,6 @@ export class FindOneByEmailProvider {
       throw new RequestTimeoutException(error, {
         description: 'Could not fetch the user',
       });
-    }
-    if (!user) {
-      throw new UnauthorizedException('User does not exists');
     }
 
     return user;

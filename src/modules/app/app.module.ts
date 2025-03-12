@@ -12,8 +12,10 @@ import { AccessTokenGuard } from '../auth/guards/access-token/access-token.guard
 import { DataResponseInterceptor } from '../../common/interceptors/data-response/data-response.interceptor';
 import appConfig from '../../config/app.config';
 import databaseConfig from '../../config/database.config';
-import { ListenerModule } from '../listener/listener.module';
+import { ListenerModule } from '../listeners/listener.module';
 import { AppController } from './app.controller';
+import { DatabaseSeederService } from './db/database-seeder.service';
+import { ListenerController } from '../listeners/listener.controller';
 
 // Get the current NODE_ENV
 const ENV = process.env.NODE_ENV;
@@ -48,16 +50,13 @@ const ENV = process.env.NODE_ENV;
     }),
   ],
   providers: [
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: AuthenticationGuard,
-    // },
     {
       provide: APP_INTERCEPTOR,
       useClass: DataResponseInterceptor,
     },
     AccessTokenGuard,
+    DatabaseSeederService,
   ],
-  controllers: [AppController]
+  controllers: [AppController, ListenerController]
 })
 export class AppModule {}

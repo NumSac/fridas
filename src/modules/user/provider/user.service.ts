@@ -34,6 +34,7 @@ export class UserService {
     return await this.findOneByEmailProvider.findOneByEmail(email);
   }
 
+
   public async findOneById(id: number) {
     let user: UserEntity | null = null;
 
