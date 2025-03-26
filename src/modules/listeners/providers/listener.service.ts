@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { UserEntity } from '../../user/entities/user.entity';
 import { CreateListenerDto } from '../dtos/create-listener.dto';
-import { ListenerServiceProvider } from './listener-service.provider';
 
 @Injectable()
 export class ListenerService {
