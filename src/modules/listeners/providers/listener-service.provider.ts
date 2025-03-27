@@ -10,13 +10,8 @@ import { HttpsListenerProvider } from './https-listener.provider';
 import { TcpListenerProvider } from './tcp-listener.provider';
 import { WebsocketListenerProvider } from './websocket-listener.provider';
 
-interface ListenerCreationParams extends Omit<CreateListenerDto, 'options'> {
-  options: ListenerOptions;
-  status: ListenerStatus;
-}
-
 @Injectable()
-export class ListenerService implements OnModuleInit, OnModuleDestroy {
+export class ListenerServiceProvider implements OnModuleInit, OnModuleDestroy {
   private activeListeners = new Map<
     number,
     {
@@ -67,10 +62,7 @@ export class ListenerService implements OnModuleInit, OnModuleDestroy {
     try {
       await listenerEntry.cleanup();
       this.activeListeners.delete(port);
-      await this.updateListenerStatus(
-        listenerEntry.id,
-        ListenerStatus.INACTIVE,
-      );
+      await this.updateListenerStatus(listenerEntry.id, ListenerStatus.INACTIVE);
     } catch (error) {
       await this.updateListenerStatus(listenerEntry.id, ListenerStatus.ERROR);
       throw new Error(`Failed to stop listener on port ${port}: ${error.message}`);
@@ -90,19 +82,11 @@ export class ListenerService implements OnModuleInit, OnModuleDestroy {
   }
 
   async createListener(createDto: CreateListenerDto): Promise<ListenerEntity> {
-    // Convert and validate options
-    const options = createDto.options
-
-    // Create with proper typing
-    const creationParams: ListenerCreationParams = {
+    const listener = this.listenersRepository.create({
       ...createDto,
-      options,
-      status: ListenerStatus.INACTIVE
-    };
-
-    return this.listenersRepository.save(
-      this.listenersRepository.create(creationParams)
-    );
+      status: ListenerStatus.INACTIVE,
+    });
+    return this.listenersRepository.save(listener);
   }
 
   private async startListener(listener: ListenerEntity) {
@@ -132,7 +116,7 @@ export class ListenerService implements OnModuleInit, OnModuleDestroy {
       case Protocol.HTTP:
         const httpServer = await this.httpListener.create(
           listener.port,
-          listener.options,
+          listener,
         );
         return {
           server: httpServer,
@@ -142,7 +126,7 @@ export class ListenerService implements OnModuleInit, OnModuleDestroy {
       case Protocol.HTTPS:
         const httpsServer = await this.httpsListener.create(
           listener.port,
-          listener.options,
+          listener,
         );
         return {
           server: httpsServer,
@@ -152,7 +136,7 @@ export class ListenerService implements OnModuleInit, OnModuleDestroy {
       case Protocol.TCP:
         const tcpServer = await this.tcpListener.create(
           listener.port,
-          listener.options,
+          listener,
         );
         return {
           server: tcpServer,
@@ -160,13 +144,13 @@ export class ListenerService implements OnModuleInit, OnModuleDestroy {
         };
 
       case Protocol.WEBSOCKET:
-        const { httpServer, cleanup } = await this.wsListener.create(
+        const { httpServer: wsServer } = await this.wsListener.create(
           listener.port,
-          listener.options,
+          listener,
         );
         return {
-          server: httpServer,
-          cleanup,
+          server: wsServer,
+          cleanup: () => this.wsListener.close(listener.port),
         };
 
       default:

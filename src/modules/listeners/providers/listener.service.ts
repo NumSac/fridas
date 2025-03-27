@@ -10,8 +10,6 @@ export class ListenerService {
   constructor(
     @InjectRepository(ListenerEntity)
     private readonly listenerRepository: Repository<ListenerEntity>,
-
-    private readonly listenerServiceProvider: ListenerServiceProvider,
   ) {}
 
   public async createListener(createListenerDto: CreateListenerDto) {
