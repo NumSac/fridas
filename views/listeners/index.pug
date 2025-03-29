@@ -32,8 +32,146 @@ block content
                 .card
                     .card-header Create New Listener
                     .card-body
+                        //- In your listeners/index.pug
                         form(method='POST' action='/listeners')
-                            //- Your form fields here
+                            .mb-3
+                                label.form-label(for='name') Listener Name
+                                input#name.form-control(
+                                    type='text'
+                                    name='name'
+                                    required
+                                    placeholder='My HTTPS Listener'
+                                )
+
+
+                            .mb-3
+                                label.form-label(for='protocol') Protocol
+                                select#protocol.form-select(name='protocol' required)
+                                  each protocol in Object.values(Protocol)
+                                      option(
+                                          value=protocol
+                                          selected=(protocol === Protocol.HTTP ? 'selected' : false)
+                                      )= protocol.toUpperCase()
+
+                            .mb-3
+                                label.form-label(for='port') Port
+                                input#port.form-control(
+                                    type='number'
+                                    name='port'
+                                    min='1'
+                                    max='65535'
+                                    required
+                                    placeholder='443'
+                                )
+
+                            .mb-3.form-check
+                                input#isActive.form-check-input(
+                                    type='checkbox'
+                                    name='isActive'
+                                    checked
+                                )
+                                label.form-check-label(for='isActive') Activate Immediately
+
+                            .card.mb-3
+                                .card-header SSL Configuration
+                                .card-body
+                                    .mb-3.form-check
+                                        input#enableSSL.form-check-input(
+                                            type='checkbox'
+                                            name='options[ssl][enabled]'
+                                            onclick='toggleSSLOptions()'
+                                        )
+                                        label.form-check-label(for='enableSSL') Enable SSL
+
+                                    #sslOptions(style='display: none')
+                                        .mb-3
+                                            label.form-label(for='sslKeyPath') Private Key Path
+                                            input#sslKeyPath.form-control(
+                                                type='text'
+                                                name='options[ssl][keyPath]'
+                                                disabled
+                                                placeholder='/path/to/private.key'
+                                            )
+
+                                        .mb-3
+                                            label.form-label(for='sslCertPath') Certificate Path
+                                            input#sslCertPath.form-control(
+                                                type='text'
+                                                name='options[ssl][certPath]'
+                                                disabled
+                                                placeholder='/path/to/certificate.crt'
+                                            )
+
+                                        .mb-3
+                                            label.form-label(for='sslCaPath') CA Bundle Path (Optional)
+                                            input#sslCaPath.form-control(
+                                                type='text'
+                                                name='options[ssl][caPath]'
+                                                disabled
+                                                placeholder='/path/to/ca_bundle.crt'
+                                            )
+
+                                        .mb-3
+                                            label.form-label(for='sslPassphrase') Passphrase (Optional)
+                                            input#sslPassphrase.form-control(
+                                                type='password'
+                                                name='options[ssl][passphrase]'
+                                                disabled
+                                                placeholder='••••••••'
+                                            )
+
+                            .card.mb-3
+                                .card-header Advanced Options
+                                .card-body
+                                    .mb-3.form-check
+                                        input#authRequired.form-check-input(
+                                            type='checkbox'
+                                            name='options[authenticationRequired]'
+                                        )
+                                        label.form-check-label(for='authRequired') Require Authentication
+
+                                    .mb-3
+                                        label.form-label(for='maxConnections') Maximum Connections
+                                        input#maxConnections.form-control(
+                                            type='number'
+                                            name='options[maxConnections]'
+                                            min='1'
+                                            placeholder='Unlimited'
+                                        )
+
+                                    .mb-3
+                                        label.form-label(for='whitelistIps') IP Whitelist
+                                        textarea#whitelistIps.form-control(
+                                            name='options[whitelistIps]'
+                                            placeholder='Enter one IP/CIDR per line'
+                                            rows='3'
+                                        )
+
+                            button.btn.btn-primary(type='submit') Create Listener
+
+                        block append scripts
+                            script.
+                              function toggleSSLOptions() {
+                                const sslEnabled = document.getElementById('enableSSL').checked;
+                                const sslOptions = document.getElementById('sslOptions');
+                                const sslFields = sslOptions.querySelectorAll('input');
+
+                                sslOptions.style.display = sslEnabled ? 'block' : 'none';
+                                sslFields.forEach(field => field.disabled = !sslEnabled);
+                              }
+
+                              // Initialize SSL options on page load
+                              document.addEventListener('DOMContentLoaded', () => {
+                                toggleSSLOptions();
+                                // Add toggle for optional CA path
+                                const caPathField = document.getElementById('sslCaPath');
+                                caPathField.closest('.mb-3').style.display = 'none';
+                                caPathField.insertAdjacentHTML('afterend', `
+                                <small class="text-muted cursor-pointer" onclick="this.previousElementSibling.style.display='block';this.remove()">
+                                  + Add CA Bundle
+                                </small>
+                              `);
+                              });
 
 block append scripts
     script.

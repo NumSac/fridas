@@ -1,49 +1,54 @@
-import { Controller, Get, Res } from '@nestjs/common';
+import { Controller, Get, Req, Res } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { ActiveUser } from '../auth/decorators/active-user.decorator';
 import { ActiveUserData } from '../auth/interfaces/active-user-data.interface';
 import { ListenerService } from './providers/listener.service';
 import { Auth } from '../auth/decorators/auth.decorator';
 import { AuthType } from '../auth/enums/auth-type.enum';
+import { ListenerStatus, Protocol } from './enums/listener.enum';
 import { Role } from '../user/entities/user.entity';
-import { ListenerStatus } from './enums/listener.enum';
-import { request } from 'express';
-
 
 @Controller('listeners')
 @Auth(AuthType.Cookie)
 export class ListenerController {
   constructor(
-    private listenerService: ListenerService,
+    private readonly listenerService: ListenerService,
   ) {
   }
 
   @Get()
   async getListeners(
     @ActiveUser() activeUser: ActiveUserData,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
-    let listeners;
-    if (activeUser.role === Role.ADMIN) {
-      listeners = await this.listenerService.findAll();
+    try {
+      if (activeUser.role === Role.ADMIN) {
+        const listeners = await this.listenerService.findAll();
 
-      return {
-        title: 'Listeners',
+        return res.render('listeners/index', {
+          layout: 'main.layout',
+          title: 'Admin Listeners Management',
+          Protocol,
+          listeners,
+          ListenerStatus,
+          // messages: req.flash(),
+        });
+      }
+
+      const listeners = await this.listenerService.findAllForUser(activeUser.sub);
+
+      res.render('listeners/index', {
+        layout: 'main.layout',
+        title: 'Listeners Management',
+        Protocol,
         listeners,
         ListenerStatus,
-        // messages: request.flash(), // If using flash messages
-        user: activeUser, // Pass user data if needed in template
-      };
+        // messages: req.flash(), // If using flash messages
+      });
+    } catch (error) {
+      // req.flash('error', 'Failed to load listeners');
+      res.redirect('/');
     }
-    listeners = await this.listenerService.findAllForUser(activeUser.sub);
-
-    res.render('listeners/index.pug', {
-      title: 'Listeners',
-      listeners,
-      ListenerStatus,
-      // messages: request.flash(), // If using flash messages
-      user: activeUser, // Pass user data if needed in template
-    });
   }
 }
-
-

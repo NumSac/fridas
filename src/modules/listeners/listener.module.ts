@@ -19,4 +19,3 @@ import { JwtModule, JwtService } from '@nestjs/jwt';
   exports: [ListenerService, ListenerServiceProvider],
 })
 export class ListenerModule {}
-
