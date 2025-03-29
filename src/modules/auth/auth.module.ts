@@ -9,10 +9,7 @@ import { BcryptProvider } from './provider/bcrypt.provider';
 import jwtConfig from '../../config/jwt.config';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
-import { GenerateWebTokensProvider } from './provider/generate-web-tokens.provider';
-import { WebLoginProvider } from './provider/web-login.provider';
 import { AuthController } from './auth.controller';
-import { AuthApiController } from './auth-api.controller';
 
 @Module({
   imports: [
@@ -20,7 +17,7 @@ import { AuthApiController } from './auth-api.controller';
     ConfigModule.forFeature(jwtConfig),
     JwtModule.registerAsync(jwtConfig.asProvider()),
   ],
-  controllers: [AuthController, AuthApiController],
+  controllers: [AuthController],
   providers: [
     {
       provide: HashingProvider,
@@ -30,8 +27,6 @@ import { AuthApiController } from './auth-api.controller';
     LoginProvider,
     RefreshTokensProvider,
     GenerateTokensProvider,
-    GenerateWebTokensProvider,
-    WebLoginProvider,
     BcryptProvider,
   ],
   exports: [AuthService, HashingProvider],

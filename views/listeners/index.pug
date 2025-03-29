@@ -1,10 +1,10 @@
+//- listeners/index.pug
 extends ../layouts/main.pug
 
 block content
     .container.mt-4
         h1.mb-4 Listeners
         .row
-            // Listener List
             .col-md-8.mb-4
                 if listeners.length > 0
                     .list-group
@@ -18,32 +18,27 @@ block content
                                               | #{listener.protocol.toUpperCase()} : #{listener.port}
                                       span.badge(class=listener.status === ListenerStatus.ACTIVE ? 'bg-success' : listener.status === ListenerStatus.ERROR ? 'bg-danger' : 'bg-secondary')
                                           | #{listener.status}
-                                  pre.small.mt-2.mb-0= JSON.stringify(listener.options, null, 2)
+                                  if listener.options
+                                      pre.small.mt-2.mb-0= JSON.stringify(listener.options, null, 2)
 
-                              // Delete Button
                               form(method='POST' action=`/listeners/${listener.id}`)
                                   input(type='hidden' name='_method' value='DELETE')
                                   button.btn.btn-danger.btn-sm(type='button' onclick=`confirmDelete('${listener.name}', '${listener.id}')`)
                                       i.bi.bi-trash
-
                 else
                     .alert.alert-info No listeners configured
 
-            // Create Listener Form
             .col-md-4
                 .card
                     .card-header Create New Listener
                     .card-body
                         form(method='POST' action='/listeners')
-                            // ... existing form fields ... (keep previous form content)
+                            //- Your form fields here
 
 block append scripts
     script.
-      // Confirm deletion dialog
       function confirmDelete(name, id) {
-        if (confirm(`Delete listener "${name}"? This action cannot be undone.`)) {
+        if (confirm(`Delete listener "${name}"?`)) {
           document.querySelector(`form[action="/listeners/${id}"]`).submit();
         }
       }
-
-      // Existing JSON formatting script ...

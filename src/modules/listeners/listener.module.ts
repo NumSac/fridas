@@ -9,6 +9,8 @@ import { HttpListenerProvider } from './providers/http-listener.provider';
 import { HttpsListenerProvider } from './providers/https-listener.provider';
 import { TcpListenerProvider } from './providers/tcp-listener.provider';
 import { WebsocketListenerProvider } from './providers/websocket-listener.provider';
+import { AuthModule } from '../auth/auth.module';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [TypeOrmModule.forFeature([ListenerEntity]), EventEmitterModule.forRoot()],
@@ -17,3 +19,4 @@ import { WebsocketListenerProvider } from './providers/websocket-listener.provid
   exports: [ListenerService, ListenerServiceProvider],
 })
 export class ListenerModule {}
+
