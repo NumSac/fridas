@@ -1,19 +1,20 @@
+// auth/guards/authentication.guard.ts
 import {
   CanActivate,
   ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-
-import { AccessTokenGuard } from '../access-token/access-token.guard';
 import { Reflector } from '@nestjs/core';
+import { Request, Response } from 'express';
 import { AuthType } from '../../enums/auth-type.enum';
+import { AccessTokenGuard } from '../access-token/access-token.guard';
 import { AUTH_TYPE_KEY } from '../../decorators/auth.decorator';
 
 @Injectable()
 export class AuthenticationGuard implements CanActivate {
   private static readonly defaultAuthType = AuthType.Bearer;
-  private authTypeGuardMap: Record<AuthType, CanActivate | CanActivate[]>;
+  private authTypeGuardMap: Record<AuthType, CanActivate>;
 
   constructor(
     private readonly reflector: Reflector,
@@ -21,6 +22,7 @@ export class AuthenticationGuard implements CanActivate {
   ) {
     this.authTypeGuardMap = {
       [AuthType.Bearer]: this.accessTokenGuard,
+      [AuthType.Cookie]: this.accessTokenGuard,
       [AuthType.None]: { canActivate: () => true },
     };
   }
@@ -31,22 +33,49 @@ export class AuthenticationGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     ) ?? [AuthenticationGuard.defaultAuthType];
 
-    const guards = authTypes.map((type) => this.authTypeGuardMap[type]).flat();
+    const guards = authTypes.map((type) => this.authTypeGuardMap[type]);
+    const request = context.switchToHttp().getRequest<Request>();
+    const response = context.switchToHttp().getResponse<Response>();
 
-    let error = new UnauthorizedException();
-
-    for (const instance of guards) {
-      const canActivate = await Promise.resolve(
-        instance.canActivate(context),
-      ).catch((err) => {
-        error = err;
-      });
-
-      if (canActivate) {
-        return true;
+    try {
+      // Try all specified authentication methods
+      for (const guard of guards) {
+        try {
+          if (await guard.canActivate(context)) {
+            return true;
+          }
+        } catch (error) {
+        }
       }
-    }
 
-    throw error;
+      // If no guards passed but we have a cookie, clear it
+      if (request.cookies?.jwt) {
+        this.accessTokenGuard.clearAuthCookie(response);
+      }
+
+      // Handle redirect for browser requests
+      if (this.isBrowserRequest(request)) {
+        response.redirect('/auth/login');
+        return false;
+      }
+
+      // Handle API requests
+      throw new UnauthorizedException('Authentication required');
+    } catch (error) {
+      if (this.isBrowserRequest(request)) {
+        response.redirect('/auth/login');
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  private isBrowserRequest(request: Request): string | boolean {
+    // Check if request is likely from a browser
+    return (
+      request.accepts('html') ||
+      !request.accepts('json') ||
+      request.method === 'GET' && !request.headers['content-type']
+    );
   }
 }

@@ -54,6 +54,10 @@ const ENV = process.env.NODE_ENV;
       provide: APP_INTERCEPTOR,
       useClass: DataResponseInterceptor,
     },
+    {
+      provide: APP_GUARD,
+      useClass: AuthenticationGuard,
+    },
     AccessTokenGuard,
     DatabaseSeederService,
   ],

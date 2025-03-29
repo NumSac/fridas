@@ -1,13 +1,12 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { Body, Controller, Get, Post, Query, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { AuthService } from './provider/auth.service';
 import { LoginDto } from './dtos/login.dto';
 import { Auth } from './decorators/auth.decorator';
 import { AuthType } from './enums/auth-type.enum';
-import { RefreshTokenDto } from './dtos/refresh-token.dto';
-import { CookieAuthenticatedGuard } from './guards/cookie-authentication/cookie-authentication.guard';
 
 @Controller('auth')
+@Auth(AuthType.None)
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -15,13 +14,13 @@ export class AuthController {
 
   @Get('login')
   loginPage(@Query() error: string, @Res() res: Response) {
-    return res.render('auth/login', { layout: 'layouts/auth.hbs', title: 'Login', error: error || null });
+    return res.render('auth/login', { layout: 'layouts/auth.pug', title: 'Login', error: error || null });
   }
 
-  @Post('web-login')
+  @Post('login')
   async webLogin(@Body() loginDto: LoginDto, @Res() res: Response) {
     try {
-      const { accessToken } = await this.authService.webLogin(loginDto);
+      const { accessToken } = await this.authService.signIn(loginDto);
 
       res.cookie('jwt', accessToken, {
         httpOnly: true,
@@ -38,8 +37,7 @@ export class AuthController {
     }
   }
 
-  @Get('logout')
-  @UseGuards(CookieAuthenticatedGuard)
+  @Post('logout')
   logout(@Res() res: Response) {
     res.clearCookie('jwt');
     return res.redirect('/auth/login');

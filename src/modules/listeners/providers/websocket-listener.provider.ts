@@ -1,5 +1,3 @@
-
-// src/listeners/providers/create-websocket-listener-provider.ts
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { createServer, Server } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';

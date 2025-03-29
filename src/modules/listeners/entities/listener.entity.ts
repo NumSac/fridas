@@ -1,5 +1,3 @@
- // src/listeners/entities/listener.entity.ts
-
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -12,7 +10,7 @@ import {
 import { ListenerStatus, Protocol } from '../enums/listener.enum';
 import { UserEntity } from '../../user/entities/user.entity';
 
-type ListenerOptions = {
+export type ListenerOptions = {
   ssl?: {
     keyPath: string;
     certPath: string;
