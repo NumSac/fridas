@@ -1,0 +1,111 @@
+//- views/listeners/details.pug
+extends ../layouts/main.pug
+
+block content
+    .container.mt-4
+        .d-flex.justify-content-between.align-items-center.mb-4
+            h1 Listener Details
+            a.btn.btn-outline-secondary(href="/listeners")
+                i.bi.bi-arrow-left.me-2
+                | Back to List
+
+        .card
+            .card-header
+                h5.mb-0 #{listener.name}
+                    span.badge(class=listener.status === ListenerStatus.ACTIVE ? 'bg-success' : listener.status === ListenerStatus.ERROR ? 'bg-danger' : 'bg-secondary')
+                        | #{listener.status}
+
+            .card-body
+                .row
+                    //- Basic Info
+                    .col-md-6
+                        .mb-4
+                            h5 Basic Configuration
+                            dl.row
+                                dt.col-sm-4 Protocol
+                                dd.col-sm-8.text-uppercase #{listener.protocol}
+
+                                dt.col-sm-4 Port
+                                dd.col-sm-8 #{listener.port}
+
+                                dt.col-sm-4 Created
+                                dd.col-sm-8 #{listener.createdAt.toLocaleString()}
+
+                                dt.col-sm-4 Last Updated
+                                dd.col-sm-8 #{listener.updatedAt.toLocaleString()}
+
+                                dt.col-sm-4 Owner
+                                dd.col-sm-8 #{listener.user.username}
+
+                    //- Advanced Configuration
+                    .col-md-6
+                        h5.mb-4 Advanced Configuration
+
+                        if listener.options
+                            .mb-4
+                                h6 SSL Configuration
+                                if listener.options.ssl
+                                    pre.small.p-3.bg-light.rounded
+                                        | Key Path: #{listener.options.ssl.keyPath}
+                                        | Cert Path: #{listener.options.ssl.certPath}
+                                        if listener.options.ssl.caPath
+                                            | CA Path: #{listener.options.ssl.caPath}
+                                        if listener.options.ssl.passphrase
+                                            | Passphrase: ********
+                                else
+                                    .text-muted No SSL configuration
+
+                            .mb-4
+                                h6 Security Settings
+                                pre.small.p-3.bg-light.rounded
+                                    | Authentication Required: #{listener.options.authenticationRequired || 'false'}
+                                    | Max Connections: #{listener.options.maxConnections || 'Unlimited'}
+                                    if listener.options.whitelistIps
+                                        | Whitelisted IPs:
+                                        each ip in listener.options.whitelistIps
+                                            br
+                                            | - #{ip}
+
+                //- Action Buttons
+                .mt-4.border-top.pt-4
+                    .d-flex.gap-2.justify-content-end
+                        if listener.status === ListenerStatus.ACTIVE
+                            button.btn.btn-warning(type="button" onclick=`stopListener('${listener.id}')`)
+                                i.bi.bi-stop-circle.me-2
+                                | Stop Listener
+                        else
+                            button.btn.btn-success(type="button" onclick=`startListener('${listener.id}')`)
+                                i.bi.bi-play-circle.me-2
+                                | Start Listener
+
+                        button.btn.btn-danger(type="button" onclick=`deleteListener('${listener.id}', '${listener.name}')`)
+                            i.bi.bi-trash.me-2
+                            | Delete Listener
+
+        //- Recent Activity Section
+        .card.mt-4
+            .card-header
+                h5.mb-0 Recent Activity
+            .card-body
+                table.table.table-hover
+                    thead
+                        tr
+                            th(scope="col") Timestamp
+                            th(scope="col") Event
+                            th(scope="col") Source IP
+                            th(scope="col") Details
+                    tbody
+                        //- Example activity - replace with real data
+                        tr
+                            td 2024-02-20 14:30:00
+                            td Connection
+                            td 192.168.1.100
+                            td Established new session
+                        tr
+                            td 2024-02-20 14:25:00
+                            td Authentication
+                            td 10.0.0.5
+                            td Failed login attempt
+
+block append scripts
+    script(src="/js/listener-details-script.js")

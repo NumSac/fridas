@@ -58,10 +58,22 @@ export class TcpListenerProvider implements OnApplicationShutdown {
   }
 
   async close(port: number): Promise<void> {
-    // Similar implementation to other providers
+    return new Promise((resolve) => {
+      const server = this.servers.get(port);
+      if (server) {
+        server.close(() => {
+          this.servers.delete(port);
+          resolve();
+        });
+      } else {
+        resolve();
+      }
+    });
   }
 
   onApplicationShutdown() {
-    // Similar implementation to other providers
+    for (const [port] of this.servers) {
+      this.close(port).catch(console.error);
+    }
   }
 }

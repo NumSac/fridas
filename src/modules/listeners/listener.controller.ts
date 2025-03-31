@@ -1,20 +1,41 @@
-import { Controller, Get, Req, Res } from '@nestjs/common';
+import {
+  Body,
+  ConflictException,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ActiveUser } from '../auth/decorators/active-user.decorator';
 import { ActiveUserData } from '../auth/interfaces/active-user-data.interface';
-import { ListenerService } from './providers/listener.service';
 import { Auth } from '../auth/decorators/auth.decorator';
 import { AuthType } from '../auth/enums/auth-type.enum';
 import { ListenerStatus, Protocol } from './enums/listener.enum';
-import { Role } from '../user/entities/user.entity';
+import { Role, UserEntity } from '../user/entities/user.entity';
+import { CreateListenerDto } from './dtos/create-listener.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { AuthorizationService } from './providers/authorization.service';
+import { ListenerOperationsService } from './providers/listener-operations.service';
+import * as fs from 'node:fs';
 
 @Controller('listeners')
 @Auth(AuthType.Cookie)
 export class ListenerController {
   constructor(
-    private readonly listenerService: ListenerService,
-  ) {
-  }
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
+    private readonly authService: AuthorizationService,
+    private readonly listenerService: ListenerOperationsService,
+  ) {}
 
   @Get()
   async getListeners(
@@ -36,7 +57,9 @@ export class ListenerController {
         });
       }
 
-      const listeners = await this.listenerService.findAllForUser(activeUser.sub);
+      const listeners = await this.listenerService.findAllForUser(
+        activeUser.sub,
+      );
 
       res.render('listeners/index', {
         layout: 'main.layout',
@@ -44,11 +67,89 @@ export class ListenerController {
         Protocol,
         listeners,
         ListenerStatus,
-        // messages: req.flash(), // If using flash messages
+        // messages: req.flash(),
       });
     } catch (error) {
       // req.flash('error', 'Failed to load listeners');
       res.redirect('/');
     }
   }
+
+  @Post()
+  public async createListener(
+    @Body() createListenerDto: CreateListenerDto,
+    @ActiveUser() activeUser: ActiveUserData,
+    @Res() res: Response,
+    @Req() req: Request,
+  ): Promise<void> {
+    try {
+      // Validate user exists
+      const user = await this.userRepository.findOneBy({ id: activeUser.sub });
+      if (!user) {
+        // Clear invalid credentials and redirect
+        res.clearCookie('jwt', {
+          path: '/',
+          domain: process.env.JWT_TOKEN_ISSUER,
+          secure: process.env.NODE_ENV === 'production',
+          httpOnly: true,
+          sameSite: 'strict',
+        });
+        return res.redirect('/auth/login');
+      }
+      if (createListenerDto.protocol === Protocol.HTTPS) {
+        if (
+          !createListenerDto.options?.ssl?.keyPath ||
+          !createListenerDto.options?.ssl?.certPath
+        ) {
+          // req.flash('error', 'SSL key and certificate are required for HTTPS');
+          return res.redirect('/listeners');
+        }
+
+        // Add file existence check
+        if (!fs.existsSync(createListenerDto.options.ssl.keyPath)) {
+          // req.flash('error', 'SSL key file not found');
+          return res.redirect('/listeners');
+        }
+      }
+
+      // Create listener and handle result
+      const listener = await this.listenerService.createListener(
+        createListenerDto,
+        user,
+      );
+
+      return res.redirect('/listeners');
+    } catch (error) {
+      console.error('Listener creation failed:', error);
+
+      // Handle specific error cases
+      const errorMessage =
+        error instanceof ConflictException
+          ? error.message
+          : 'Failed to create listener';
+
+      req.flash('error', errorMessage);
+      return res.redirect('/listeners');
+    }
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  public async deleteListener(
+    @Param('id') id: string,
+    @ActiveUser() user: ActiveUserData,
+  ) {
+    const listener = await this.listenerService.findOneByIdForUser(
+      id,
+      user.sub,
+    );
+    if (!listener) {
+      throw new NotFoundException('Listener not found');
+    }
+    this.authService.checkListenerOwnership(listener, user.sub, user.role);
+    await this.listenerService.deleteListener(id, user.sub, user.role);
+  }
+
+  @Get('id')
+  public async getDetailsForListener(@Param('id') id: string) {}
 }

@@ -1,39 +1,49 @@
-//- listeners/index.pug
 extends ../layouts/main.pug
 
 block content
     .container.mt-4
-        h1.mb-4 Listeners
         .row
+            // Listener List Column
             .col-md-8.mb-4
-                if listeners.length > 0
-                    .list-group
-                      each listener in listeners
-                          .list-group-item.d-flex.justify-content-between.align-items-center
-                              .flex-grow-1.me-3
-                                  .d-flex.justify-content-between.align-items-start
-                                      div
-                                          h5.mb-1= listener.name
-                                          small.text-muted
-                                              | #{listener.protocol.toUpperCase()} : #{listener.port}
-                                      span.badge(class=listener.status === ListenerStatus.ACTIVE ? 'bg-success' : listener.status === ListenerStatus.ERROR ? 'bg-danger' : 'bg-secondary')
-                                          | #{listener.status}
-                                  if listener.options
-                                      pre.small.mt-2.mb-0= JSON.stringify(listener.options, null, 2)
-
-                              form(method='POST' action=`/listeners/${listener.id}`)
-                                  input(type='hidden' name='_method' value='DELETE')
-                                  button.btn.btn-danger.btn-sm(type='button' onclick=`confirmDelete('${listener.name}', '${listener.id}')`)
-                                      i.bi.bi-trash
-                else
-                    .alert.alert-info No listeners configured
-
-            .col-md-4
                 .card
-                    .card-header Create New Listener
+                    .card-header.d-flex.justify-content-between.align-items-center
+                        h4.mb-0 Active Listeners
+                        a.btn.btn-sm.btn-outline-primary(href="#")
+                            i.bi.bi-arrow-clockwise Refresh
+
                     .card-body
-                        //- In your listeners/index.pug
-                        form(method='POST' action='/listeners')
+                        if listeners.length > 0
+                            .list-group
+                              each listener in listeners
+                                  .list-group-item.d-flex.justify-content-between.align-items-start
+                                      .d-flex.w-100
+                                          .flex-grow-1.me-3
+                                              a.text-decoration-none(href=`/listeners/${listener.id}`)
+                                                  h5.mb-1= listener.name
+                                                  small.text-muted
+                                                      | #{listener.protocol.toUpperCase()} : #{listener.port}
+                                              if listener.options
+                                                  pre.small.mt-2.mb-0= JSON.stringify(listener.options, null, 2)
+
+                                          .d-flex.flex-column.align-items-end
+                                              span.badge(class=listener.status === ListenerStatus.ACTIVE ? 'bg-success' : listener.status === ListenerStatus.ERROR ? 'bg-danger' : 'bg-secondary')
+                                                  | #{listener.status}
+                                              button.btn.btn-danger.btn-sm.mt-2(
+                                                  type='button'
+                                                  onclick=`deleteListener('${listener.id}', '${listener.name}')`
+                                              )
+                                                  i.bi.bi-trash
+                        else
+                            .alert.alert-info.mb-0 No active listeners configured
+
+            // Create Listener Form Column
+            .col-md-4
+                .card.sticky-top(style="top: 1rem")
+                    .card-header
+                        h5.mb-0 Create New Listener
+                    .card-body
+                        form(method='POST' action='/listeners' id="createListenerForm")
+                            // Form fields remain the same as before
                             .mb-3
                                 label.form-label(for='name') Listener Name
                                 input#name.form-control(
@@ -42,7 +52,6 @@ block content
                                     required
                                     placeholder='My HTTPS Listener'
                                 )
-
 
                             .mb-3
                                 label.form-label(for='protocol') Protocol
@@ -79,7 +88,6 @@ block content
                                         input#enableSSL.form-check-input(
                                             type='checkbox'
                                             name='options[ssl][enabled]'
-                                            onclick='toggleSSLOptions()'
                                         )
                                         label.form-check-label(for='enableSSL') Enable SSL
 
@@ -89,7 +97,6 @@ block content
                                             input#sslKeyPath.form-control(
                                                 type='text'
                                                 name='options[ssl][keyPath]'
-                                                disabled
                                                 placeholder='/path/to/private.key'
                                             )
 
@@ -98,7 +105,6 @@ block content
                                             input#sslCertPath.form-control(
                                                 type='text'
                                                 name='options[ssl][certPath]'
-                                                disabled
                                                 placeholder='/path/to/certificate.crt'
                                             )
 
@@ -107,7 +113,6 @@ block content
                                             input#sslCaPath.form-control(
                                                 type='text'
                                                 name='options[ssl][caPath]'
-                                                disabled
                                                 placeholder='/path/to/ca_bundle.crt'
                                             )
 
@@ -116,7 +121,6 @@ block content
                                             input#sslPassphrase.form-control(
                                                 type='password'
                                                 name='options[ssl][passphrase]'
-                                                disabled
                                                 placeholder='••••••••'
                                             )
 
@@ -147,36 +151,10 @@ block content
                                             rows='3'
                                         )
 
-                            button.btn.btn-primary(type='submit') Create Listener
-
-                        block append scripts
-                            script.
-                              function toggleSSLOptions() {
-                                const sslEnabled = document.getElementById('enableSSL').checked;
-                                const sslOptions = document.getElementById('sslOptions');
-                                const sslFields = sslOptions.querySelectorAll('input');
-
-                                sslOptions.style.display = sslEnabled ? 'block' : 'none';
-                                sslFields.forEach(field => field.disabled = !sslEnabled);
-                              }
-
-                              // Initialize SSL options on page load
-                              document.addEventListener('DOMContentLoaded', () => {
-                                toggleSSLOptions();
-                                // Add toggle for optional CA path
-                                const caPathField = document.getElementById('sslCaPath');
-                                caPathField.closest('.mb-3').style.display = 'none';
-                                caPathField.insertAdjacentHTML('afterend', `
-                                <small class="text-muted cursor-pointer" onclick="this.previousElementSibling.style.display='block';this.remove()">
-                                  + Add CA Bundle
-                                </small>
-                              `);
-                              });
+                            .d-grid
+                                button.btn.btn-primary(type='submit')
+                                    i.bi.bi-plus-circle.me-2
+                                    | Create Listener
 
 block append scripts
-    script.
-      function confirmDelete(name, id) {
-        if (confirm(`Delete listener "${name}"?`)) {
-          document.querySelector(`form[action="/listeners/${id}"]`).submit();
-        }
-      }
+    script(src="public/js/listener-page-script.js")
