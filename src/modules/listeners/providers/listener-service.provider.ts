@@ -1,4 +1,9 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ListenerEntity } from '../entities/listener.entity';
@@ -8,6 +13,7 @@ import { HttpListenerProvider } from './http-listener.provider';
 import { HttpsListenerProvider } from './https-listener.provider';
 import { TcpListenerProvider } from './tcp-listener.provider';
 import { WebsocketListenerProvider } from './websocket-listener.provider';
+import { UserEntity } from '../../user/entities/user.entity';
 
 @Injectable()
 export class ListenerServiceProvider implements OnModuleInit, OnModuleDestroy {
@@ -32,7 +38,7 @@ export class ListenerServiceProvider implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     const activeListeners = await this.listenersRepository.find({
-      where: { isActive: true },
+      where: { status: ListenerStatus.ACTIVE },
     });
     await Promise.all(
       activeListeners.map((listener) => this.startListener(listener)),
@@ -61,10 +67,15 @@ export class ListenerServiceProvider implements OnModuleInit, OnModuleDestroy {
     try {
       await listenerEntry.cleanup();
       this.activeListeners.delete(port);
-      await this.updateListenerStatus(listenerEntry.id, ListenerStatus.INACTIVE);
+      await this.updateListenerStatus(
+        listenerEntry.id,
+        ListenerStatus.INACTIVE,
+      );
     } catch (error) {
       await this.updateListenerStatus(listenerEntry.id, ListenerStatus.ERROR);
-      throw new Error(`Failed to stop listener on port ${port}: ${error.message}`);
+      throw new Error(
+        `Failed to stop listener on port ${port}: ${error.message}`,
+      );
     }
   }
 
@@ -80,9 +91,21 @@ export class ListenerServiceProvider implements OnModuleInit, OnModuleDestroy {
     return Array.from(this.activeListeners.keys());
   }
 
-  async createListener(createDto: CreateListenerDto): Promise<ListenerEntity> {
+  async createListener(
+    createDto: CreateListenerDto,
+    user: UserEntity,
+  ): Promise<ListenerEntity> {
+    // Check port conflict
+    const existing = await this.listenersRepository.findOne({
+      where: { port: createDto.port },
+    });
+
+    if (existing) {
+      throw new ConflictException(`Port ${createDto.port} is already in use`);
+    }
     const listener = this.listenersRepository.create({
       ...createDto,
+      user,
       status: ListenerStatus.INACTIVE,
     });
     return this.listenersRepository.save(listener);

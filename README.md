@@ -8,7 +8,9 @@ for penetration testing/red team operations.
 
 ## Why a C2 in Node.js/Nest.js?
 
-Answer is simple, there is no reason not to do it in Node.js. The agents are currently in development and will either be
+Answer is simple, there is no reason not to do it in Node.js. I personally enjoy Nest a lot and since mostly IO
+operations will occur Nodes architecture shouldn't become a problem.
+The agents are currently in development and will either be
 written in C or Go.
 
 Any improvement ideas or contributions are welcome!

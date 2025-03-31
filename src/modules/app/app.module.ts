@@ -45,7 +45,7 @@ const ENV = process.env.NODE_ENV;
         password: configService.get('database.password'),
         host: configService.get('database.host'),
         autoLoadEntities: configService.get('database.autoLoadEntities'),
-        database: configService.get('database.name')
+        database: configService.get('database.name'),
       }),
     }),
   ],
@@ -61,6 +61,6 @@ const ENV = process.env.NODE_ENV;
     AccessTokenGuard,
     DatabaseSeederService,
   ],
-  controllers: [AppController, ListenerController]
+  controllers: [AppController],
 })
 export class AppModule {}
