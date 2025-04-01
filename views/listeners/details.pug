@@ -35,7 +35,7 @@ block content
                                 dd.col-sm-8 #{listener.updatedAt.toLocaleString()}
 
                                 dt.col-sm-4 Owner
-                                dd.col-sm-8 #{listener.user.username}
+                                dd.col-sm-8 #{listener.user}
 
                     //- Advanced Configuration
                     .col-md-6
@@ -108,4 +108,4 @@ block content
                             td Failed login attempt
 
 block append scripts
-    script(src="/js/listener-details-script.js")
+    script(src="/public/js/listener-details-script.js")

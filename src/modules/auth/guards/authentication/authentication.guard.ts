@@ -1,4 +1,3 @@
-// auth/guards/authentication.guard.ts
 import {
   CanActivate,
   ExecutionContext,
@@ -44,8 +43,7 @@ export class AuthenticationGuard implements CanActivate {
           if (await guard.canActivate(context)) {
             return true;
           }
-        } catch (error) {
-        }
+        } catch (error) {}
       }
 
       // If no guards passed but we have a cookie, clear it
@@ -75,7 +73,7 @@ export class AuthenticationGuard implements CanActivate {
     return (
       request.accepts('html') ||
       !request.accepts('json') ||
-      request.method === 'GET' && !request.headers['content-type']
+      (request.method === 'GET' && !request.headers['content-type'])
     );
   }
 }

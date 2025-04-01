@@ -9,6 +9,7 @@ import {
   NotFoundException,
   Param,
   Post,
+  Render,
   Req,
   Res,
   UnauthorizedException,
@@ -26,6 +27,8 @@ import { Repository } from 'typeorm';
 import { AuthorizationService } from './providers/authorization.service';
 import { ListenerOperationsService } from './providers/listener-operations.service';
 import * as fs from 'node:fs';
+import { ListenerResponseDto } from './dtos/listener-details.dto';
+import { instanceToPlain, plainToClass } from 'class-transformer';
 
 @Controller('listeners')
 @Auth(AuthType.Cookie)
@@ -150,6 +153,43 @@ export class ListenerController {
     await this.listenerService.deleteListener(id, user.sub, user.role);
   }
 
-  @Get('id')
-  public async getDetailsForListener(@Param('id') id: string) {}
+  @Get(':id')
+  public async getDetailsForListener(
+    @Param('id') id: string,
+    @ActiveUser() user: ActiveUserData,
+    @Res() res: Response,
+  ) {
+    try {
+      const listener = await this.listenerService.findOneByIdForUser(
+        id,
+        user.sub,
+      );
+
+      if (!listener) {
+        throw new NotFoundException('Listener not found');
+      }
+
+      this.authService.checkListenerOwnership(listener, user.sub, user.role);
+
+      // Transform data
+      const plainData = instanceToPlain(listener);
+      const listenerDto = plainToClass(ListenerResponseDto, plainData, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      });
+      const templateData = instanceToPlain(listenerDto);
+
+      // Explicitly render template with full control
+      return res.render('listeners/details', {
+        listener: templateData,
+        ListenerStatus: ListenerStatus,
+      });
+    } catch (error) {
+      // Handle errors appropriately
+      if (error instanceof NotFoundException) {
+        return res.redirect('/listeners?error=not_found');
+      }
+      return res.redirect(`/listeners?error=server_error`);
+    }
+  }
 }

@@ -1,12 +1,14 @@
-// src/listeners/providers/https-listener-provider.ts
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { createServer, Server } from 'https';
 import { readFileSync } from 'fs';
 import { ListenerEntity } from '../entities/listener.entity';
+import { IListenerInterface } from '../interfaces/listener.interface';
 
 @Injectable()
-export class HttpsListenerProvider implements OnApplicationShutdown {
+export class HttpsListenerProvider
+  implements OnApplicationShutdown, IListenerInterface
+{
   private servers = new Map<number, Server>();
 
   constructor(private readonly eventEmitter: EventEmitter2) {}
@@ -45,14 +47,15 @@ export class HttpsListenerProvider implements OnApplicationShutdown {
   }
 
   private getSslOptions(listener: ListenerEntity) {
-    if (!listener.options.ssl) throw new Error("[!] No SSL options provided");
+    if (!listener.options.ssl) throw new Error('[!] No SSL options provided');
     return {
       key: readFileSync(listener.options.ssl?.keyPath),
       cert: readFileSync(listener.options.ssl?.certPath),
-      ca: listener.options.ssl.caPath ? readFileSync(listener.options.ssl.caPath) : undefined,
+      ca: listener.options.ssl.caPath
+        ? readFileSync(listener.options.ssl.caPath)
+        : undefined,
     };
   }
-
 
   async close(port: number): Promise<void> {
     return new Promise((resolve) => {

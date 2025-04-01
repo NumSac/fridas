@@ -3,10 +3,16 @@ import { createServer, Server } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ListenerEntity } from '../entities/listener.entity';
+import { IListenerInterface } from '../interfaces/listener.interface';
 
 @Injectable()
-export class WebsocketListenerProvider implements OnApplicationShutdown {
-  private servers = new Map<number, { httpServer: Server; wss: WebSocketServer }>();
+export class WebsocketListenerProvider
+  implements OnApplicationShutdown, IListenerInterface
+{
+  private servers = new Map<
+    number,
+    { httpServer: Server; wss: WebSocketServer }
+  >();
 
   constructor(private readonly eventEmitter: EventEmitter2) {}
 

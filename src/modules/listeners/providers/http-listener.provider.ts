@@ -2,9 +2,12 @@ import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { createServer, Server } from 'http';
 import { ListenerEntity } from '../entities/listener.entity';
+import { IListenerInterface } from '../interfaces/listener.interface';
 
 @Injectable()
-export class HttpListenerProvider implements OnApplicationShutdown {
+export class HttpListenerProvider
+  implements OnApplicationShutdown, IListenerInterface
+{
   private servers = new Map<number, Server>();
 
   constructor(private readonly eventEmitter: EventEmitter2) {}
