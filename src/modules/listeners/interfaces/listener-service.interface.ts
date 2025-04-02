@@ -26,6 +26,7 @@ export interface IListenerCrudService {
 
 export interface IListenerControlService {
   stopListener(listenerPort: number): Promise<void>;
-  startListener(listenerPort: number): Promise<void>;
+
+  startListener(listener: ListenerEntity): Promise<void>;
   getActivePorts(): Promise<number[]>;
 }

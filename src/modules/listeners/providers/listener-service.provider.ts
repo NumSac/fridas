@@ -91,7 +91,7 @@ export class ListenerServiceProvider implements OnModuleInit, OnModuleDestroy {
     return Array.from(this.activeListeners.keys());
   }
 
-  async createListener(
+  public async createListener(
     createDto: CreateListenerDto,
     user: UserEntity,
   ): Promise<ListenerEntity> {
@@ -111,7 +111,7 @@ export class ListenerServiceProvider implements OnModuleInit, OnModuleDestroy {
     return this.listenersRepository.save(listener);
   }
 
-  private async startListener(listener: ListenerEntity) {
+  public async startListener(listener: ListenerEntity) {
     try {
       if (this.activeListeners.has(listener.port)) {
         throw new Error(`Port ${listener.port} is already in use`);
@@ -144,7 +144,7 @@ export class ListenerServiceProvider implements OnModuleInit, OnModuleDestroy {
           server: httpServer,
           cleanup: () => this.httpListener.close(listener.port),
         };
-
+      // Add here new tunneling methods
       case Protocol.HTTPS:
         const httpsServer = await this.httpsListener.create(
           listener.port,

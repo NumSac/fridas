@@ -37,8 +37,8 @@ export class ListenerOperationsService
     return this.listenerServiceProvider.stopListener(listenerPort);
   }
 
-  public async startListener(listenerPort: number): Promise<void> {
-    return this.listenerServiceProvider.restartListener(listenerPort);
+  public async startListener(listener: ListenerEntity): Promise<void> {
+    return await this.listenerServiceProvider.startListener(listener);
   }
 
   public async getActivePorts(): Promise<number[]> {
