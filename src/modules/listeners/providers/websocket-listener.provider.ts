@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ListenerEntity } from '../entities/listener.entity';
 import { IListenerInterface } from '../interfaces/listener.interface';
+import { WsEvent } from '../enums/events.enum';
 
 @Injectable()
 export class WebsocketListenerProvider
@@ -33,7 +34,7 @@ export class WebsocketListenerProvider
 
       // Setup WebSocket connection handler
       wss.on('connection', (ws: WebSocket, request) => {
-        this.eventEmitter.emit('websocket.connection', {
+        this.eventEmitter.emit(WsEvent.CONNECTION, {
           ws,
           request,
           listener,
@@ -41,7 +42,7 @@ export class WebsocketListenerProvider
         });
 
         ws.on('message', (message) => {
-          this.eventEmitter.emit('websocket.message', {
+          this.eventEmitter.emit(WsEvent.MESSAGE, {
             ws,
             message,
             listener,
@@ -50,7 +51,7 @@ export class WebsocketListenerProvider
         });
 
         ws.on('close', () => {
-          this.eventEmitter.emit('websocket.close', {
+          this.eventEmitter.emit(WsEvent.CLOSE, {
             ws,
             listener,
             timestamp: new Date(),
@@ -60,7 +61,7 @@ export class WebsocketListenerProvider
 
       // Handle HTTP server errors
       httpServer.on('error', (err) => {
-        this.eventEmitter.emit('websocket.error', {
+        this.eventEmitter.emit(WsEvent.ERROR, {
           error: err,
           listener,
           timestamp: new Date(),

@@ -2,11 +2,7 @@
 async function stopListener(listenerId) {
   try {
     const response = await fetch(`/listeners/${listenerId}/stop`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-      },
+      method: 'GET',
     });
 
     if (response.ok) {
