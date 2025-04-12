@@ -9,10 +9,8 @@ import {
   NotFoundException,
   Param,
   Post,
-  Render,
   Req,
   Res,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ActiveUser } from '../auth/decorators/active-user.decorator';

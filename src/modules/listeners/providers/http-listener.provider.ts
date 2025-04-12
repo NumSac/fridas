@@ -1,8 +1,27 @@
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { createServer, Server } from 'http';
+import { createServer, IncomingMessage, Server, ServerResponse } from 'http';
 import { ListenerEntity } from '../entities/listener.entity';
 import { IListenerInterface } from '../interfaces/listener.interface';
+import { HttpEvent } from '../enums/events.enum';
+
+interface EnhancedResponse extends ServerResponse {
+  status?: (code: number) => EnhancedResponse;
+  json?: (data: any) => void;
+}
+
+function createEnhancedResponse(res: ServerResponse): EnhancedResponse {
+  return Object.assign(res, {
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    json(data: any) {
+      this.setHeader('Content-Type', 'application/json');
+      this.end(JSON.stringify(data));
+    },
+  });
+}
 
 @Injectable()
 export class HttpListenerProvider
@@ -18,14 +37,18 @@ export class HttpListenerProvider
         return reject(new Error(`Port ${port} is already in use`));
       }
 
-      const server = createServer((req, res) => {
-        this.eventEmitter.emit('http.request', {
-          req,
-          res,
-          listener,
-          timestamp: new Date(),
-        });
-      });
+      const server = createServer(
+        (req: IncomingMessage, res: ServerResponse) => {
+          const enhancedRes = createEnhancedResponse(res);
+
+          this.eventEmitter.emit(HttpEvent.REQUEST, {
+            req,
+            res: enhancedRes, // Use enhanced response
+            listener,
+            timestamp: new Date(),
+          });
+        },
+      );
 
       server
         .listen(port, () => {
@@ -33,7 +56,7 @@ export class HttpListenerProvider
           resolve(server);
         })
         .on('error', (err) => {
-          this.eventEmitter.emit('http.error', {
+          this.eventEmitter.emit(HttpEvent.ERROR, {
             error: err,
             listener,
             timestamp: new Date(),
