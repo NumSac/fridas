@@ -1,0 +1,66 @@
+//- views/agents/index.pug
+extends ../layouts/main.pug
+
+block content
+    .container.mt-4
+        .d-flex.justify-content-between.align-items-center.mb-4
+            h1 Agents
+                span.badge.bg-secondary.ms-2 #{agents.length}
+
+        .row.g-4
+            if agents.length > 0
+              each agent in agents
+                  .col-md-6.col-lg-4
+                      .card.h-100
+                          .card-header.d-flex.justify-content-between.align-items-center
+                              h5.mb-0
+                                  i.bi(class=agent.platform === 'windows' ? 'bi-windows' : agent.platform === 'linux' ? 'bi-ubuntu' : agent.platform === 'macos' ? 'bi-apple' : agent.platform === 'android' ? 'bi-android2' : 'bi-question-circle')
+                                  |  #{agent.hostname}
+                              span.badge(class={
+                                'bg-success': agent.status === AgentStatus.ONLINE,
+                                'bg-secondary': agent.status === AgentStatus.OFFLINE,
+                                'bg-warning': agent.status === AgentStatus.BUSY,
+                                'bg-danger': agent.status === AgentStatus.COMPROMISED
+                              }) #{agent.status}
+
+                          .card-body
+                              .row.g-2
+                                  .col-12
+                                      small.text-muted Last seen:
+                                      | #{agent.lastCheckIn.toLocaleString()}
+                                  .col-6
+                                      .d-flex.align-items-center.gap-2
+                                          i.bi.bi-pc-display
+                                          span.small #{agent.ipAddress}
+                                  .col-6
+                                      .d-flex.align-items-center.gap-2
+                                          i.bi.bi-cpu
+                                          span.small #{agent.architecture || 'Unknown'}
+                                  .col-12.mt-2
+                                      .d-flex.gap-2
+                                          span.badge.bg-light.text-dark
+                                              i.bi.bi-clock-history.me-1
+                                              | #{agent.checkInInterval}s
+                                          if agent.userContext
+                                              span.badge.bg-light.text-dark
+                                                  i.bi.bi-person.me-1
+                                                  | #{agent.userContext}
+                                          if agent.persistenceMethod
+                                              span.badge.bg-light.text-dark
+                                                  i.bi.bi-shield-lock.me-1
+                                                  | #{agent.persistenceMethod}
+
+                          .card-footer.bg-transparent
+                              .d-flex.justify-content-end.gap-2
+                                  button.btn.btn-sm.btn-primary(type="button" title="Connect")
+                                      i.bi.bi-terminal
+                                  button.btn.btn-sm.btn-outline-secondary(type="button" title="Tasks")
+                                      i.bi.bi-list-task
+                                  button.btn.btn-sm.btn-danger(type="button" title="Remove")
+                                      i.bi.bi-trash3
+
+            else
+                .col-12
+                    .alert.alert-info.text-center
+                        i.bi.bi-info-circle.me-2
+                        | No agents registered

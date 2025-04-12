@@ -7,7 +7,7 @@ import {
   BeforeInsert,
   Index,
 } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 export enum AgentPlatform {
   WINDOWS = 'windows',

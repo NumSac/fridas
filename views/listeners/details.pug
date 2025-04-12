@@ -10,10 +10,10 @@ block content
                 | Back to List
 
         .card
-            .card-header
+            .card-header.d-flex.justify-content-between.align-items-center
                 h5.mb-0 #{listener.name}
-                    span.badge(class=listener.status === ListenerStatus.ACTIVE ? 'bg-success' : listener.status === ListenerStatus.ERROR ? 'bg-danger' : 'bg-secondary')
-                        | #{listener.status}
+                span.badge(class=listener.status === ListenerStatus.ACTIVE ? 'bg-success' : listener.status === ListenerStatus.ERROR ? 'bg-danger' : 'bg-secondary')
+                    | #{listener.status}
 
             .card-body
                 .row

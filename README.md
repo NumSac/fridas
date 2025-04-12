@@ -36,6 +36,7 @@ Any improvement ideas or contributions are welcome!
     - Real-time agent monitoring
     - Interactive shell access
     - Campaign analytics
+- **Event-driven architecture**
 
 ## Quick Start
 

@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { HttpListenerProvider } from '../listeners/providers/http-listener.provider';
 import { HttpHandlerService } from './providers/http-handler.service';
 import { HttpMiddleware } from './middleware/http.middleware';
 import { HttpResponseInterceptor } from './interceptors/http-response.interceptor';

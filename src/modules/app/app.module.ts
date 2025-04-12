@@ -15,10 +15,10 @@ import databaseConfig from '../../config/database.config';
 import { ListenerModule } from '../listeners/listener.module';
 import { AppController } from './app.controller';
 import { DatabaseSeederService } from './db/database-seeder.service';
-import { HttpLoggingInterceptor } from '../../common/interceptors/logging/logging.interceptor';
 import { LoggingModule } from '../logging/logging.module';
 import { HttpModule } from '../http/http.module';
 import { HttpsModule } from '../https/https.module';
+import { AgentsModule } from '../agents/agents.module';
 
 // Get the current NODE_ENV
 const ENV = process.env.NODE_ENV;
@@ -31,6 +31,7 @@ const ENV = process.env.NODE_ENV;
     LoggingModule,
     HttpModule,
     HttpsModule,
+    AgentsModule,
     ConfigModule.forRoot({
       isGlobal: true,
       //envFilePath: ['.env.development', '.env'],

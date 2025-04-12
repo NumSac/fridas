@@ -12,7 +12,6 @@ export class HttpHandlerService {
     listener: ListenerEntity;
     timestamp: Date;
   }) {
-    // Common request processing logic
     console.log(`Request received on port ${payload.listener.port}`);
     this.validateRequest(payload.req);
     this.logRequest(payload);
