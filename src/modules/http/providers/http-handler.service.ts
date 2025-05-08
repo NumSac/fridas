@@ -17,6 +17,14 @@ export class HttpHandlerService {
     this.logRequest(payload);
   }
 
+  @OnEvent(HttpEvent.REGISTER)
+  handleRegister(payload: {
+    req: Request;
+    res: Response;
+    listener: ListenerEntity;
+    timestamp: Date;
+  }) {}
+
   @OnEvent(HttpEvent.ERROR)
   handleError(payload: {
     error: Error;

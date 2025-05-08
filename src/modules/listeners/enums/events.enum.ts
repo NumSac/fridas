@@ -8,6 +8,7 @@ export enum HttpEvent {
   CLIENT_ERROR = 'http.clientError',
   REQUEST_START = 'http.requestStart',
   REQUEST_END = 'http.requestEnd',
+  REGISTER = 'http.register',
 }
 
 export enum HttpsEvent {
@@ -20,6 +21,7 @@ export enum HttpsEvent {
   CLIENT_ERROR = 'https.clientError',
   REQUEST_START = 'https.requestStart',
   REQUEST_END = 'https.requestEnd',
+  REGISTER = 'https.register',
 }
 
 export enum TcpEvent {
@@ -30,6 +32,7 @@ export enum TcpEvent {
   LISTENING = 'tcp.listening',
   DATA_SENT = 'tcp.dataSent',
   TIMEOUT = 'tcp.timeout',
+  REGISTER = 'tcp.register',
 }
 
 export enum WsEvent {
@@ -41,6 +44,7 @@ export enum WsEvent {
   MESSAGE_SENT = 'ws.messageSent',
   OPEN = 'ws.open',
   UPGRADE = 'ws.upgrade',
+  REGISTER = 'ws.register',
 }
 
 export enum ProtocolEvent {

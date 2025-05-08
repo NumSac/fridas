@@ -4,14 +4,15 @@ import { ListenerModule } from '../listeners/listener.module';
 import { AgentService } from './providers/agent.service';
 import { AgentEntity } from './entities/agent.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { RegisterAgentProvider } from './providers/register-agent.provider';
 
 @Module({
   imports: [
     forwardRef(() => ListenerModule),
     TypeOrmModule.forFeature([AgentEntity]),
   ],
-  providers: [AgentService],
+  providers: [AgentService, RegisterAgentProvider],
   controllers: [AgentsController],
-  exports: [],
+  exports: [AgentService],
 })
 export class AgentsModule {}
