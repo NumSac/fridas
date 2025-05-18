@@ -12,6 +12,7 @@ type ErrorPayload = {
   timestamp: Date;
 };
 
+// Something
 @Injectable()
 export class HttpsErrorService {
   @OnEvent(HttpEvent.ERROR)
