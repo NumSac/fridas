@@ -3,9 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"net"
-	"net/http"
 	"os"
 	"time"
 
@@ -44,8 +42,7 @@ func main() {
 	}
 
 	if remotePort == 0 || remoteHost == "" {
-		log("Error: Both -remote-port and -remote-host are required")
-		log("Use -h or --help for usage information")
+		log("Error: Both -remote-port and -remote-host are required", "Use -h or --help for usage information")
 		os.Exit(1)
 	}
 
@@ -58,159 +55,28 @@ func main() {
 	}
 
 	pingRemoteHostOrExit()
-	startTunnel()
-}
 
-func startTunnel() {
-	switch tunnelMethod {
-	case "tcp":
-		startTCPTunnel()
-	case "http":
-		startHTTPTunnel()
-	case "websocket":
-		startWebsocketTunnel()
-	default:
-		log("Unsupported tunnel method: " + tunnelMethod)
-		os.Exit(1)
-	}
-}
-
-func startTCPTunnel() {
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", bindPort))
-	if err != nil {
-		log("TCP listener error:", err)
-		os.Exit(1)
-	}
-	defer listener.Close()
-
-	log(fmt.Sprintf("TCP tunnel listening on :%d", bindPort))
-
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			log("TCP accept error:", err)
-			continue
-		}
-
-		go handleTCPConnection(conn)
-	}
-}
-
-func handleTCPConnection(src net.Conn) {
-	defer src.Close()
-
-	dst, err := net.Dial("tcp", fmt.Sprintf("%s:%d", remoteHost, remotePort))
-	if err != nil {
-		log("Remote connection error:", err)
-		return
-	}
-	defer dst.Close()
-
-	go func() {
-		io.Copy(dst, src)
-	}()
-	io.Copy(src, dst)
-}
-
-func startHTTPTunnel() {
-	server := &http.Server{
-		Addr: fmt.Sprintf(":%d", bindPort),
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if debug {
-				log(fmt.Sprintf("Proxying request to %s", r.URL))
-			}
-
-			r.URL.Scheme = "http"
-			r.URL.Host = fmt.Sprintf("%s:%d", remoteHost, remotePort)
-
-			resp, err := http.DefaultTransport.RoundTrip(r)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusServiceUnavailable)
-				return
-			}
-			defer resp.Body.Close()
-
-			for k, vv := range resp.Header {
-				for _, v := range vv {
-					w.Header().Add(k, v)
-				}
-			}
-			w.WriteHeader(resp.StatusCode)
-			io.Copy(w, resp.Body)
-		}),
+	tunnel := Tunnel{
+		Method:      tunnelMethod,
+		LocalPort:   bindPort,
+		RemoteHost:  remoteHost,
+		RemotePort:  remotePort,
+		EnableDebug: debug,
 	}
 
-	log(fmt.Sprintf("HTTP tunnel listening on :%d", bindPort))
-	log("Server error:", server.ListenAndServe())
-}
-
-func startWebsocketTunnel() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		wsConn, err := websocketUpgrader.Upgrade(w, r, nil)
-		if err != nil {
-			log("WebSocket upgrade error:", err)
-			return
-		}
-		defer wsConn.Close()
-
-		remoteConn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", remoteHost, remotePort))
-		if err != nil {
-			log("Remote connection error:", err)
-			return
-		}
-		defer remoteConn.Close()
-
-		done := make(chan struct{})
-
-		go func() {
-			defer close(done)
-			for {
-				_, message, err := wsConn.ReadMessage()
-				if err != nil {
-					return
-				}
-				remoteConn.Write(message)
-			}
-		}()
-
-		go func() {
-			defer close(done)
-			buf := make([]byte, 1024)
-			for {
-				n, err := remoteConn.Read(buf)
-				if err != nil {
-					return
-				}
-				wsConn.WriteMessage(websocket.BinaryMessage, buf[:n])
-			}
-		}()
-
-		<-done
-	})
-
-	log(fmt.Sprintf("WebSocket tunnel listening on :%d", bindPort))
-	log("Server error:", http.ListenAndServe(fmt.Sprintf(":%d", bindPort), nil))
+	tunnel.Start()
 }
 
 func pingRemoteHostOrExit() {
-	client := http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get(fmt.Sprintf("http://%s:%d/ping", remoteHost, remotePort))
+	timeout := 5 * time.Second
+	address := fmt.Sprintf("%s:%d", remoteHost, remotePort)
+
+	conn, err := net.DialTimeout("tcp", address, timeout)
 	if err != nil {
-		log("Ping error:", err)
+		log("Connection check failed:", err)
 		os.Exit(1)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log("Ping failed with status:", resp.StatusCode)
-		os.Exit(1)
-	}
-}
-
-func log(v ...interface{}) {
-	if debug {
-		fmt.Println(v...)
-	}
+	conn.Close()
 }
 
 func printHelp() {
