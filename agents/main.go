@@ -6,8 +6,6 @@ import (
 	"net"
 	"os"
 	"time"
-
-	"github.com/gorilla/websocket"
 )
 
 var (
@@ -17,13 +15,6 @@ var (
 	bindPort     int
 	help         bool
 	debug        bool
-)
-
-var (
-	websocketUpgrader = websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-	}
 )
 
 func main() {
@@ -69,7 +60,7 @@ func main() {
 
 func pingRemoteHostOrExit() {
 	timeout := 5 * time.Second
-	address := fmt.Sprintf("%s:%d", remoteHost, remotePort)
+	address := net.JoinHostPort(remoteHost, fmt.Sprintf("%d", remotePort))
 
 	conn, err := net.DialTimeout("tcp", address, timeout)
 	if err != nil {
