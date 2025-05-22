@@ -65,7 +65,7 @@ func (t *Tunnel) collectSystemInfo() (*AgentInfo, error) {
 		IPAddresses:   ips,
 		Protocol:      t.Method,
 		ExecutionTime: execTime,
-		HostID:        generateHostID(),
+		HostID:        getHostID(),
 	}, nil
 }
 
@@ -98,7 +98,7 @@ func (t *Tunnel) getIPAddresses() []string {
 	return ips
 }
 
-func generateHostID() string {
+func getHostID() string {
 	hostname, _ := os.Hostname()
 	interfaces, _ := net.Interfaces()
 	if len(interfaces) > 0 {
