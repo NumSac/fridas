@@ -15,7 +15,10 @@ import databaseConfig from '../../config/database.config';
 import { ListenerModule } from '../listeners/listener.module';
 import { AppController } from './app.controller';
 import { DatabaseSeederService } from './db/database-seeder.service';
-import { ListenerController } from '../listeners/listener.controller';
+import { LoggingModule } from '../logging/logging.module';
+import { HttpModule } from '../http/http.module';
+import { HttpsModule } from '../https/https.module';
+import { AgentsModule } from '../agents/agents.module';
 
 // Get the current NODE_ENV
 const ENV = process.env.NODE_ENV;
@@ -25,6 +28,10 @@ const ENV = process.env.NODE_ENV;
     UserModule,
     AuthModule,
     ListenerModule,
+    LoggingModule,
+    HttpModule,
+    HttpsModule,
+    AgentsModule,
     ConfigModule.forRoot({
       isGlobal: true,
       //envFilePath: ['.env.development', '.env'],
@@ -54,6 +61,10 @@ const ENV = process.env.NODE_ENV;
       provide: APP_INTERCEPTOR,
       useClass: DataResponseInterceptor,
     },
+    // {
+    //   provide: APP_INTERCEPTOR,
+    //   useClass: HttpLoggingInterceptor,
+    // },
     {
       provide: APP_GUARD,
       useClass: AuthenticationGuard,

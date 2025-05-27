@@ -1,11 +1,13 @@
-// src/listeners/providers/tcp-listener-provider.ts
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { createServer, Server } from 'net';
 import { ListenerEntity } from '../entities/listener.entity';
+import { IListenerInterface } from '../interfaces/listener.interface';
 
 @Injectable()
-export class TcpListenerProvider implements OnApplicationShutdown {
+export class TcpListenerProvider
+  implements OnApplicationShutdown, IListenerInterface
+{
   private servers = new Map<number, Server>();
 
   constructor(private readonly eventEmitter: EventEmitter2) {}

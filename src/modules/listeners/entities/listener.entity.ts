@@ -37,7 +37,7 @@ export class ListenerEntity {
   @Column({
     type: 'enum',
     enum: Protocol,
-    default: Protocol.HTTP,,
+    default: Protocol.HTTP,
   })
   protocol: Protocol;
 

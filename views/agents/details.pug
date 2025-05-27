@@ -1,0 +1,131 @@
+//- views/agents/details.pug
+extends ../layouts/main.pug
+
+block content
+    .container.mt-4
+        .d-flex.justify-content-between.align-items-center.mb-4
+            h1 Agent Details
+            a.btn.btn-outline-secondary(href="/agents")
+                i.bi.bi-arrow-left.me-2
+                | Back to List
+
+        .card.mb-4
+            .card-header.d-flex.justify-content-between.align-items-center
+                h5.mb-0
+                    i.bi(class=agent.platform === 'windows' ? 'bi-windows' : agent.platform === 'linux' ? 'bi-ubuntu' : agent.platform === 'macos' ? 'bi-apple' : agent.platform === 'android' ? 'bi-android2' : 'bi-question-circle')
+                    |  #{agent.hostname}
+                span.badge(class={
+                  'bg-success': agent.status === AgentStatus.ONLINE,
+                  'bg-secondary': agent.status === AgentStatus.OFFLINE,
+                  'bg-warning': agent.status === AgentStatus.BUSY,
+                  'bg-danger': agent.status === AgentStatus.COMPROMISED
+                }) #{agent.status}
+
+            .card-body
+                .row
+                    //- Basic Information
+                    .col-md-6.mb-4
+                        h5.mb-3 Basic Information
+                        dl.row
+                            dt.col-sm-4 Platform
+                            dd.col-sm-8
+                                i.bi(class=agent.platform === 'windows' ? 'bi-windows' : agent.platform === 'linux' ? 'bi-ubuntu' : agent.platform === 'macos' ? 'bi-apple' : agent.platform === 'android' ? 'bi-android2' : 'bi-question-circle')
+                                |  #{agent.platform}
+
+                            dt.col-sm-4 Architecture
+                            dd.col-sm-8 #{agent.architecture || 'Unknown'}
+
+                            dt.col-sm-4 Agent Version
+                            dd.col-sm-8 #{agent.agentVersion}
+
+                            dt.col-sm-4 User Context
+                            dd.col-sm-8 #{agent.userContext || 'N/A'}
+
+                            dt.col-sm-4 Persistence
+                            dd.col-sm-8 #{agent.persistenceMethod || 'None'}
+
+                    //- Connection Information
+                    .col-md-6.mb-4
+                        h5.mb-3 Connection Details
+                        dl.row
+                            dt.col-sm-4 IP Address
+                            dd.col-sm-8
+                                i.bi.bi-pc-display.me-2
+                                | #{agent.ipAddress}
+
+                            dt.col-sm-4 Last Check-in
+                            dd.col-sm-8
+                                | #{agent.lastCheckIn.toLocaleString()}
+                                if agent.needsCheckIn()
+                                    span.badge.bg-warning.ms-2 Overdue
+
+                            dt.col-sm-4 Check-in Interval
+                            dd.col-sm-8
+                                span.badge.bg-light.text-dark
+                                    i.bi.bi-clock-history.me-1
+                                    | #{agent.checkInInterval}s
+
+                            dt.col-sm-4 Created At
+                            dd.col-sm-8 #{agent.createdAt.toLocaleString()}
+
+                            dt.col-sm-4 Updated At
+                            dd.col-sm-8 #{agent.updatedAt.toLocaleString()}
+
+                //- Advanced Information
+                .row
+                    .col-md-6.mb-4
+                        h5.mb-3 Configuration
+                        if agent.metadata && Object.keys(agent.metadata).length > 0
+                            pre.small.p-3.bg-light.rounded
+                                code.json
+                                    | #{JSON.stringify(agent.metadata, null, 2)}
+                        else
+                            .alert.alert-info No additional configuration metadata
+
+                    .col-md-6.mb-4
+                        h5.mb-3 Network Information
+                        .card.bg-light
+                            .card-body
+                                h6.mb-3 Security Settings
+                                dl.mb-0
+                                    dt.small Authentication Token
+                                    dd.small.text-muted (Hashed) #{agent.authToken.substring(0, 15)}...
+
+                                    if agent.metadata?.networkConfig
+                                        dt.small.mt-2 Proxy Configuration
+                                        dd.small.text-muted #{agent.metadata.networkConfig.proxy || 'None'}
+
+                                        dt.small.mt-2 Firewall Bypass
+                                        dd.small.text-muted #{agent.metadata.networkConfig.firewallBypass ? 'Enabled' : 'Disabled'}
+
+            .card-footer
+                .d-flex.justify-content-end.gap-2
+                    if agent.status === AgentStatus.ONLINE
+                        button.btn.btn-success(type="button" onclick=`sendCommand('${agent.id}')`)
+                            i.bi.bi-terminal.me-2
+                            | Send Command
+                    button.btn.btn-primary(type="button" onclick=`showTaskHistory('${agent.id}')`)
+                        i.bi.bi-clock-history.me-2
+                        | Task History
+                    button.btn.btn-danger(type="button" onclick=`removeAgent('${agent.id}', '${agent.hostname}')`)
+                        i.bi.bi-trash3.me-2
+                        | Remove Agent
+
+block scripts
+    script.
+      function sendCommand(agentId) {
+        // Implement command sending logic
+        console.log('Sending command to agent:', agentId);
+      }
+
+      function showTaskHistory(agentId) {
+        // Implement task history display
+        console.log('Showing task history for:', agentId);
+      }
+
+      function removeAgent(agentId, hostname) {
+        if (confirm(`Permanently remove agent ${hostname}?`)) {
+          // Implement removal logic
+          console.log('Removing agent:', agentId);
+        }
+      }

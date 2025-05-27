@@ -1,4 +1,4 @@
-# Frida - Modern C2 Framework
+# Fridas - Modern C2 Framework
 
 [![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -36,6 +36,7 @@ Any improvement ideas or contributions are welcome!
     - Real-time agent monitoring
     - Interactive shell access
     - Campaign analytics
+- **Event-driven architecture**
 
 ## Quick Start
 

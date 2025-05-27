@@ -11,7 +11,6 @@ import {
   Post,
   Req,
   Res,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ActiveUser } from '../auth/decorators/active-user.decorator';
@@ -26,7 +25,10 @@ import { Repository } from 'typeorm';
 import { AuthorizationService } from './providers/authorization.service';
 import { ListenerOperationsService } from './providers/listener-operations.service';
 import * as fs from 'node:fs';
+import { ListenerResponseDto } from './dtos/listener-details.dto';
+import { instanceToPlain, plainToClass } from 'class-transformer';
 
+//
 @Controller('listeners')
 @Auth(AuthType.Cookie)
 export class ListenerController {
@@ -53,7 +55,6 @@ export class ListenerController {
           Protocol,
           listeners,
           ListenerStatus,
-          // messages: req.flash(),
         });
       }
 
@@ -67,10 +68,8 @@ export class ListenerController {
         Protocol,
         listeners,
         ListenerStatus,
-        // messages: req.flash(),
       });
     } catch (error) {
-      // req.flash('error', 'Failed to load listeners');
       res.redirect('/');
     }
   }
@@ -128,7 +127,6 @@ export class ListenerController {
           ? error.message
           : 'Failed to create listener';
 
-      req.flash('error', errorMessage);
       return res.redirect('/listeners');
     }
   }
@@ -150,6 +148,81 @@ export class ListenerController {
     await this.listenerService.deleteListener(id, user.sub, user.role);
   }
 
-  @Get('id')
-  public async getDetailsForListener(@Param('id') id: string) {}
+  @Get(':id')
+  public async getDetailsForListener(
+    @Param('id') id: string,
+    @ActiveUser() user: ActiveUserData,
+    @Res() res: Response,
+  ) {
+    try {
+      const listener = await this.listenerService.findOneByIdForUser(
+        id,
+        user.sub,
+      );
+
+      if (!listener) {
+        throw new NotFoundException('Listener not found');
+      }
+
+      this.authService.checkListenerOwnership(listener, user.sub, user.role);
+
+      // Transform data
+      const plainData = instanceToPlain(listener);
+      const listenerDto = plainToClass(ListenerResponseDto, plainData, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      });
+      const templateData = instanceToPlain(listenerDto);
+
+      // Explicitly render template with full control
+      return res.render('listeners/details', {
+        listener: templateData,
+        ListenerStatus: ListenerStatus,
+      });
+    } catch (error) {
+      // Handle errors appropriately
+      if (error instanceof NotFoundException) {
+        return res.redirect('/listeners?error=not_found');
+      }
+      return res.redirect(`/listeners?error=server_error`);
+    }
+  }
+
+  @Get(':id/start')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  public async remoteStartListener(
+    @Param('id') id: string,
+    @ActiveUser() user: ActiveUserData,
+  ) {
+    // Find previous created listener
+    const listener = await this.listenerService.findOneByIdForUser(
+      id,
+      user.sub,
+    );
+    if (!listener) {
+      throw new NotFoundException('Listener or User not found');
+    }
+
+    // Startup listener service
+    await this.listenerService.startListener(listener);
+  }
+
+  @Get(':id/stop')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  public async remoteStopListener(
+    @Param('id') id: string,
+    @ActiveUser() user: ActiveUserData,
+  ) {
+    // Find previous created listener
+    const listener = await this.listenerService.findOneByIdForUser(
+      id,
+      user.sub,
+    );
+    if (!listener) {
+      throw new NotFoundException('Listener or User not found');
+    }
+
+    // Startup listener service
+    await this.listenerService.stopListener(listener.port);
+  }
 }

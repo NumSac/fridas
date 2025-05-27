@@ -4,8 +4,6 @@ declare global {
   namespace Express {
     interface Request {
       user?: UserEntity;
-
-      flash(type: 'success' | 'error', message?: string): string[];
     }
   }
 }

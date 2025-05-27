@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ListenerServiceProvider } from './providers/listener-service.provider';
 import { ListenerController } from './listener.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -11,10 +11,12 @@ import { WebsocketListenerProvider } from './providers/websocket-listener.provid
 import { UserModule } from '../user/user.module';
 import { AuthorizationService } from './providers/authorization.service';
 import { ListenerOperationsService } from './providers/listener-operations.service';
+import { AgentsModule } from '../agents/agents.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ListenerEntity]),
+    forwardRef(() => AgentsModule),
     EventEmitterModule.forRoot(),
     UserModule,
   ],
